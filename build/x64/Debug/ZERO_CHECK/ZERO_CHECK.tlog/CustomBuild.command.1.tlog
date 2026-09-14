@@ -1,0 +1,10 @@
+^E:\DEVELOPMENT\NTUST-COMPUTER GRAPHICS PROJECTS\P1\IMAGEEDITING\IMAGEEDITING-MASTER\BUILD\CMAKEFILES\0276F53CFDA782819A073EB5109C7887\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SE:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master" "-BE:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/ImageEditing.sln"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -1,0 +1,4 @@
+E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/CMakeFiles/ImageEditing.dir
+E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/CMakeFiles/libtarga.dir
+E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/CMakeFiles/ALL_BUILD.dir
+E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/CMakeFiles/ZERO_CHECK.dir

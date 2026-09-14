@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\src\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\src\ImageWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\src\ScriptHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\src\TargaImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\src\Globals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\src\Globals.inl">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\src\ImageWidget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\src\ScriptHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\src\TargaImage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{740EEDCD-30CD-3DF0-B148-996CFE6F64CF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{6452EE16-D63D-3164-B983-23A299C5259F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

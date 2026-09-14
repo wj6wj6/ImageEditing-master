@@ -1,0 +1,32 @@
+[
+{
+  "directory": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\clang++.exe -DPROJECT_DIR=\"\\\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master\\\"\" -D_XKEYCHECK_H -I\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/include\" -I\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/lib\" -g -o CMakeFiles\\ImageEditing.dir\\src\\Main.cpp.obj -c \"E:\\Development\\NTUST-Computer graphics projects\\P1\\ImageEditing\\ImageEditing-master\\src\\Main.cpp\"",
+  "file": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/Main.cpp",
+  "output": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/CMakeFiles/ImageEditing.dir/src/Main.cpp.obj"
+},
+{
+  "directory": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\clang++.exe -DPROJECT_DIR=\"\\\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master\\\"\" -D_XKEYCHECK_H -I\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/include\" -I\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/lib\" -g -o CMakeFiles\\ImageEditing.dir\\src\\ImageWidget.cpp.obj -c \"E:\\Development\\NTUST-Computer graphics projects\\P1\\ImageEditing\\ImageEditing-master\\src\\ImageWidget.cpp\"",
+  "file": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/ImageWidget.cpp",
+  "output": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/CMakeFiles/ImageEditing.dir/src/ImageWidget.cpp.obj"
+},
+{
+  "directory": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\clang++.exe -DPROJECT_DIR=\"\\\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master\\\"\" -D_XKEYCHECK_H -I\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/include\" -I\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/lib\" -g -o CMakeFiles\\ImageEditing.dir\\src\\ScriptHandler.cpp.obj -c \"E:\\Development\\NTUST-Computer graphics projects\\P1\\ImageEditing\\ImageEditing-master\\src\\ScriptHandler.cpp\"",
+  "file": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/ScriptHandler.cpp",
+  "output": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/CMakeFiles/ImageEditing.dir/src/ScriptHandler.cpp.obj"
+},
+{
+  "directory": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\clang++.exe -DPROJECT_DIR=\"\\\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master\\\"\" -D_XKEYCHECK_H -I\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/include\" -I\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/lib\" -g -o CMakeFiles\\ImageEditing.dir\\src\\TargaImage.cpp.obj -c \"E:\\Development\\NTUST-Computer graphics projects\\P1\\ImageEditing\\ImageEditing-master\\src\\TargaImage.cpp\"",
+  "file": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp",
+  "output": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/CMakeFiles/ImageEditing.dir/src/TargaImage.cpp.obj"
+},
+{
+  "directory": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\clang.exe -DPROJECT_DIR=\"\\\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master\\\"\" -D_XKEYCHECK_H -I\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/include\" -I\"E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/lib\" -g -o CMakeFiles\\libtarga.dir\\src\\libtarga.c.obj -c \"E:\\Development\\NTUST-Computer graphics projects\\P1\\ImageEditing\\ImageEditing-master\\src\\libtarga.c\"",
+  "file": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/libtarga.c",
+  "output": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/CMakeFiles/libtarga.dir/src/libtarga.c.obj"
+}
+]

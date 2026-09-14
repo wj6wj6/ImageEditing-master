@@ -1,0 +1,212 @@
+================================================================================
+Linker Errors
+Generated: 2026-09-14T09:58:02.084Z
+Total Errors: 69
+================================================================================
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_arg.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_visual.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Group.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Window.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Widget.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Input.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Box.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Device.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_get_system_colors.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_abort.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_utf.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(screen_xywh.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_lock.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_compose.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_labeltype.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Image.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Tooltip.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_color.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Double_Window.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Preferences.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_rect.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_read_image.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_font.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Window_fullscreen.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_dnd.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_utf8.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_boxtype.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Input_.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Menu_.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Menu_Button.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Repeat_Button.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Window_shape.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_cursor.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_ask.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_line_style.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_vertex.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_curve.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_arc.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_arci.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Pixmap.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Bitmap.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_draw_image.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_plastic.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_gtk.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_gleam.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(flstring.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Tiled_Image.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_round_box.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(vsnprintf.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_draw.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_draw_pixmap.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Menu_Window.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Overlay_Window.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(filename_match.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(numericsort.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(filename_list.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(case.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(is_spacing.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_shortcut.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Menu.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Menu_add.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Button.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_grab.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Return_Button.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Window_hotspot.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(fl_symbols.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(Fl_Single_Window.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
+
+[LNK4099] (MSVC)
+找不到 PDB 'fltk.pdb' (有 'fltkd.lib(scandir.obj)' 或位於 'E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\Debug\fltk.pdb')，當做沒有偵錯資訊，連結物件 [E:\Development\NTUST-Computer graphics projects\P1\ImageEditing\ImageEditing-master\build\ImageEditing.vcxproj]
