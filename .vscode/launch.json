@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ImageEditing",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/build/Debug/ImageEditing.exe",
+      "cwd": "E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master"
+    }
+  ]
+}

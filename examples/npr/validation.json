@@ -1,0 +1,32 @@
+{
+  "basic": {
+    "width": 593,
+    "height": 464,
+    "alpha_preserved": true,
+    "unique_rgb_colors": 19679
+  },
+  "advanced": {
+    "width": 593,
+    "height": 464,
+    "alpha_preserved": true,
+    "unique_rgb_colors": 40604
+  },
+  "advanced-bold": {
+    "width": 593,
+    "height": 464,
+    "alpha_preserved": true,
+    "unique_rgb_colors": 33654
+  },
+  "cartoon": {
+    "width": 593,
+    "height": 464,
+    "alpha_preserved": true,
+    "unique_rgb_colors": 2006
+  },
+  "watercolor": {
+    "width": 593,
+    "height": 464,
+    "alpha_preserved": true,
+    "unique_rgb_colors": 40147
+  }
+}

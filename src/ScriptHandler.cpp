@@ -14,6 +14,9 @@
 #include <iostream>
 #include <fstream>
 #include <string.h>
+#include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
 #include "TargaImage.h"
 
 using namespace std;
@@ -41,6 +44,9 @@ const char      c_asCommands[][32]      = { "load",                     // valid
                                             "filter-edge",
                                             "filter-enhance",
                                             "npr-paint",
+                                            "npr-paint-advanced",
+                                            "npr-cartoon",
+                                            "npr-watercolor",
                                             "half",
                                             "double",
                                             "scale",
@@ -75,6 +81,9 @@ enum ECommands          // command ids
     FILTER_EDGE,
     FILTER_ENHANCE,
     NPR_PAINT,
+    NPR_PAINT_ADVANCED,
+    NPR_CARTOON,
+    NPR_WATERCOLOR,
     HALF,
     DOUBLE,
     SCALE,
@@ -126,10 +135,14 @@ bool CScriptHandler::HandleCommand(const char* sCommand, TargaImage*& pImage)
     {
         case LOAD:
         {
-            if (pImage)
-                delete pImage;
             char* sFilename = strtok(NULL, c_sWhiteSpace);
-            bResult = (pImage = TargaImage::Load_Image(sFilename)) != NULL;
+            TargaImage* pLoadedImage = TargaImage::Load_Image(sFilename);
+            bResult = pLoadedImage != NULL;
+            if (bResult)
+            {
+                delete pImage;
+                pImage = pLoadedImage;
+            }
 
             if (!bResult)
             {
@@ -151,6 +164,7 @@ bool CScriptHandler::HandleCommand(const char* sCommand, TargaImage*& pImage)
 
             bParsed = sFilename != NULL;
             bResult =  bParsed && pImage->Save_Image(sFilename);
+            bParsed = bResult;
             break;
         }// SAVE
 
@@ -261,6 +275,51 @@ bool CScriptHandler::HandleCommand(const char* sCommand, TargaImage*& pImage)
             bResult = pImage->NPR_Paint();
             break;
         }// NPR_PAINT
+
+        case NPR_PAINT_ADVANCED:
+        case NPR_CARTOON:
+        case NPR_WATERCOLOR:
+        {
+            char* scaleToken = strtok(NULL, c_sWhiteSpace);
+            char* seedToken = strtok(NULL, c_sWhiteSpace);
+            char* extraToken = strtok(NULL, c_sWhiteSpace);
+            double scale = 1.0;
+            unsigned long seed = 1337;
+            bool valid = !extraToken && (command != NPR_CARTOON || !seedToken);
+            char* end = NULL;
+            if (scaleToken)
+            {
+                errno = 0;
+                scale = strtod(scaleToken, &end);
+                valid = valid && end != scaleToken && *end == '\0' &&
+                    errno != ERANGE && scale >= 0.5 && scale <= 3.0;
+            }
+            if (seedToken)
+            {
+                errno = 0;
+                seed = strtoul(seedToken, &end, 10);
+                valid = valid && seedToken[0] != '-' && end != seedToken &&
+                    *end == '\0' && errno != ERANGE && seed <= UINT_MAX;
+            }
+            if (!valid)
+            {
+                cout << "Usage: " << c_asCommands[command]
+                     << (command == NPR_CARTOON ? " [strength]\n" : " [brush-scale [seed]]\n")
+                     << "Scale/strength: 0.5 to 3.0";
+                if (command != NPR_CARTOON) cout << "; seed: 0 to " << UINT_MAX;
+                cout << endl;
+                bParsed = bResult = false;
+            }
+            else if (command == NPR_CARTOON)
+                bParsed = bResult = pImage->NPR_Cartoon(static_cast<float>(scale));
+            else if (command == NPR_WATERCOLOR)
+                bParsed = bResult = pImage->NPR_Watercolor(
+                    static_cast<float>(scale), static_cast<unsigned int>(seed));
+            else
+                bParsed = bResult = pImage->NPR_Paint_Advanced(
+                    static_cast<float>(scale), static_cast<unsigned int>(seed));
+            break;
+        }// NPR_PAINT_ADVANCED
 
 
         case HALF:
@@ -465,6 +524,3 @@ bool CScriptHandler::HandleScriptFile(const char* sFilename, TargaImage*& pImage
     inFile.close();
     return bResult;
 }// CScriptHandler
-
-
-

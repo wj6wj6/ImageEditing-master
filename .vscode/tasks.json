@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cmake",
+			"label": "CMake: 設定",
+			"command": "configure",
+			"problemMatcher": [],
+			"detail": "CMake 範本 設定 工作"
+		}
+	]
+}

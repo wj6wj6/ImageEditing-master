@@ -1,0 +1,15 @@
+load Images/wiz.tga
+npr-paint
+save examples/npr/basic.png
+load Images/wiz.tga
+npr-paint-advanced
+save examples/npr/advanced.png
+load Images/wiz.tga
+npr-paint-advanced 1.7
+save examples/npr/advanced-bold.png
+load Images/wiz.tga
+npr-cartoon
+save examples/npr/cartoon.png
+load Images/wiz.tga
+npr-watercolor
+save examples/npr/watercolor.png

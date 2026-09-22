@@ -30,8 +30,8 @@ class TargaImage
 	    ~TargaImage(void);
 
         unsigned char*	To_RGB(void);	            // Convert the image to RGB format,
-        bool Save_Image(const char*);               // save the image to a file
-        static TargaImage* Load_Image(char*);       // Load a file and return a pointer to a new TargaImage object.  Returns NULL on failure
+        bool Save_Image(const char*);               // Save TGA/PNG/JPEG; JPEG uses a white background.
+        static TargaImage* Load_Image(char*);       // Load TGA/PNG/JPEG. Returns a new object, or NULL on failure.
 
         bool To_Grayscale();
 
@@ -62,6 +62,10 @@ class TargaImage
         bool Filter_Enhance();
 
         bool NPR_Paint();
+        // Curved, textured strokes. Scale: 0.5..3; seed makes a run reproducible.
+        bool NPR_Paint_Advanced(float brushScale = 1.0f, unsigned int seed = 1337);
+        bool NPR_Cartoon(float strength = 1.0f);
+        bool NPR_Watercolor(float brushScale = 1.0f, unsigned int seed = 1337);
 
         bool Half_Size();
         bool Double_Size();
@@ -102,5 +106,3 @@ public:
 
 
 #endif
-
-

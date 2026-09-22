@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "MinSizeRel/ImageEditing.exe"
+			"path" : "Release/ImageEditing.exe"
 		},
 		{
-			"path" : "MinSizeRel/ImageEditing.pdb"
+			"path" : "Release/ImageEditing.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -90,7 +90,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O1 /Ob1 /DNDEBUG"
+					"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG"
 				}
 			],
 			"defines" : 
@@ -128,11 +128,11 @@
 	"dependencies" : 
 	[
 		{
-			"backtrace" : 3,
-			"id" : "libtarga::@6890427a1f51a3e7e1df"
+			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
 		},
 		{
-			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
+			"backtrace" : 3,
+			"id" : "libtarga::@6890427a1f51a3e7e1df"
 		}
 	],
 	"id" : "ImageEditing::@6890427a1f51a3e7e1df",
@@ -141,7 +141,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O1 /Ob1 /DNDEBUG",
+				"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /O2 /Ob2 /DNDEBUG",
 				"role" : "flags"
 			},
 			{
@@ -189,7 +189,7 @@
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "MinSizeRel\\libtarga.lib",
+				"fragment" : "Release\\libtarga.lib",
 				"role" : "libraries"
 			},
 			{
