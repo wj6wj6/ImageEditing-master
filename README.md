@@ -61,8 +61,45 @@ cmake -S . -B build -G "Visual Studio 16 2019" -A x64
 cmake --build build --config Debug --target ImageEditing
 ```
 
-The PNG/JPEG codecs are vendored in `include/stb`; no additional DLLs or
-downloads are needed to build or run the program.
+The PNG/JPEG codecs are vendored in `include/stb` and need no extra codec DLLs.
+The MSVC build still depends on the Visual C++ runtime; the portable package
+below includes the release runtime DLLs.
+
+## Portable demo (Windows 10/11 x64)
+
+Put demo images in the project's `Images` directory. From the project directory,
+run this on the build computer (CMake and Visual Studio 2019 C++ tools required):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Make-Portable.ps1
+```
+
+This builds Release x64 in `build-portable` and creates
+`dist/P1-Demo-Windows-x64.zip`. It packages the executable, redistributable MSVC
+runtime DLLs, the `Images` directory, an empty `Output` directory, an optional launcher,
+and demo instructions. Rebuild the ZIP after changing source code or images.
+
+On the demo computer, extract the whole ZIP into a writable directory and open
+`ImageEditing.exe`. In GUI mode, the portable executable automatically uses
+its own folder as the working directory, including when started from a shortcut
+or another directory. `Start.bat` remains an optional launcher.
+Enter these commands in the application:
+
+```text
+load Images/wiz.tga
+npr-paint-advanced
+save Output/my-oil-paint.png
+```
+
+Use `Images/` without a leading slash. Add your own images to that folder and
+avoid spaces in filenames used in commands. Run `run demo.txt` to generate all
+five NPR examples in `Output`; rerunning overwrites those demo output files.
+For command-line use, run `.\ImageEditing.exe -headless demo.txt` from the
+extracted folder. Headless mode keeps the terminal's working directory for
+scripts and image paths.
+See the included `README.txt` for more commands. The demo computer does not
+need CMake or Visual Studio. This ZIP is separate from any required source-code
+or report submission.
 
 ## Verify image formats
 

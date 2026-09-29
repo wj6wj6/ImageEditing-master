@@ -19,6 +19,10 @@
 #include <string.h>
 #include <iostream>
 #include <vector>
+#ifdef IMAGEEDITING_PORTABLE
+#include <string>
+#include <windows.h>
+#endif
 #include "TargaImage.h"
 #include "ImageWidget.h"
 #include "ScriptHandler.h"
@@ -43,7 +47,7 @@ std::vector<char*>  vsStudentNames;
 void MakeNames()
 {
     // ************ ADD YOUR NAME HERE ****************************************
-    //vsStudentNames.push_back("Your name here!");
+    vsStudentNames.push_back("name");
 }// MakeNames
 
 
@@ -68,6 +72,28 @@ static int Arg_Callback(int argc, char *argv[], int &i)
 {
     return 0;
 }// Arg_Callback
+
+
+#ifdef IMAGEEDITING_PORTABLE
+// GUI commands use paths beside the portable executable. Headless scripts and
+// ordinary development builds keep the caller's working directory.
+static bool UsePortableDirectory()
+{
+    std::vector<wchar_t> filename(32768);
+    DWORD length = GetModuleFileNameW(NULL, filename.data(),
+                                    static_cast<DWORD>(filename.size()));
+    if (length == 0 || length >= filename.size())
+        return false;
+
+    std::wstring directory(filename.data(), length);
+    std::wstring::size_type separator = directory.find_last_of(L"\\/");
+    if (separator == std::wstring::npos)
+        return false;
+
+    directory.resize(separator + 1);
+    return SetCurrentDirectoryW(directory.c_str()) != 0;
+}
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,6 +149,13 @@ int main(int argc, char *argv[])
     // run the gui if we're not headless
     if (!bHeadless)
     {
+#ifdef IMAGEEDITING_PORTABLE
+        if (!UsePortableDirectory())
+        {
+            cerr << "Error: Unable to use the portable executable's folder.\n";
+            return 1;
+        }
+#endif
         // using the gui so create our window and the image widget
         Fl_Window   window(350, 100, "CS559 Project 1");
         Fl::visual(FL_RGB);

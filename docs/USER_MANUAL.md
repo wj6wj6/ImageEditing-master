@@ -2,6 +2,37 @@
 
 ## 啟動與讀寫圖片
 
+### Portable 版本
+
+在原始碼專案的 `ImageEditing-master` 資料夾開啟 PowerShell，執行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Make-Portable.ps1
+```
+
+建置端需要 CMake 和 Visual Studio 2019 C++ x64 工具。產生的
+`dist/P1-Demo-Windows-x64.zip` 包含 Release 執行檔、runtime DLL、`Images`
+與選用的啟動輔助檔，適用於 Windows 10/11 x64。
+
+將 ZIP 完整解壓縮到可寫入的資料夾，雙擊 `ImageEditing.exe`。圖片統一放在程式旁的
+`Images`，指令使用相對路徑，開頭不用加 `/`：
+
+```text
+load Images/wiz.tga
+npr-paint-advanced
+save Output/my-oil-paint.png
+```
+
+視窗模式會自動以 EXE 所在資料夾為工作目錄，整個 portable 資料夾可以直接搬動。
+`Start.bat` 保留作為選用的啟動輔助檔。輸入 `run demo.txt`
+會把五種 NPR 結果存到 `Output`；再次執行會覆寫同名示範輸出檔。
+以下開發版範例中的 `load wiz.tga`，在 portable 版請改成 `load Images/wiz.tga`。
+
+命令列批次測試可在 portable 資料夾執行 `.\ImageEditing.exe -headless demo.txt`。
+`-headless` 模式保留終端機的目前工作目錄，腳本與圖片路徑以該目錄為準。
+
+### 本機開發版本
+
 建置後的執行檔位於 `build/Debug/ImageEditing.exe`。本機 VS Code 的工作目錄已設成 `E:/Development/NTUST-Computer graphics projects/P1`，因此可以直接讀取該資料夾的 `wiz.tga`；不需要搬動 exe。
 
 在程式視窗底下的指令框逐行輸入，每一行按 Enter：

@@ -1066,6 +1066,18 @@
 			"value" : "FALSE"
 		},
 		{
+			"name" : "IMAGEEDITING_BUILD_PORTABLE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Enable the Windows x64 portable ZIP package"
+				}
+			],
+			"type" : "BOOL",
+			"value" : "OFF"
+		},
+		{
 			"name" : "ImageEditing_BINARY_DIR",
 			"properties" : 
 			[
