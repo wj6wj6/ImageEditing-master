@@ -1,0 +1,3 @@
+load Images/wiz.tga
+npr-paint
+save Output/basic.png

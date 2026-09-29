@@ -5,7 +5,7 @@ P1 Image Editing - Portable Demo
 啟動
 1. 將 ZIP 全部解壓縮到可寫入的資料夾，例如桌面。
 2. 雙擊 ImageEditing.exe，啟動程式。
-3. 在視窗下方的指令框輸入指令，每行按 Enter。
+3. 在視窗上方的指令框輸入指令，每行按 Enter。
 
 圖片放在程式旁的 Images 資料夾，輸出存到 Output 資料夾。
 視窗模式會自動以 EXE 所在資料夾讀寫相對路徑，可以搬動整個資料夾。
@@ -25,6 +25,18 @@ save Output/my-cartoon.png
 load Images/wiz.tga
 npr-watercolor
 save Output/my-watercolor.png
+
+現場逐項示範
+Demo 資料夾內有 26 份獨立腳本。每次輸入一份，等結果出現後再切換下一項。
+run Demo/gray.txt
+run Demo/floyd.txt
+run Demo/oil.txt
+run Demo/cartoon.txt
+run Demo/water.txt
+每份腳本會先重新載入來源圖片，輸出保存在 Output。
+油畫和水彩固定使用種子 1337；Basic NPR 和 Random 抖色可能每次不同。
+恢復原圖：run Demo/original.txt
+使用已保存的備用油畫：load Reference/oil.png
 
 批次示範
 在程式的指令框輸入：

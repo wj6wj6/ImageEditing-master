@@ -1,0 +1,3 @@
+load Images/wiz.tga
+dither-fs
+save Output/floyd.png

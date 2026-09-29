@@ -1,0 +1,3 @@
+load Images/wiz.tga
+quant-pop
+save Output/pop.png

@@ -1,0 +1,3 @@
+load Images/wiz.tga
+dither-bright
+save Output/brightness.png

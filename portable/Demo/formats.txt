@@ -1,0 +1,4 @@
+load Images/alpha-demo.png
+save Output/formats-alpha.png
+save Output/formats-white.jpg
+load Output/formats-white.jpg

@@ -1,0 +1,2 @@
+load Images/wiz.tga
+save Output/original.png

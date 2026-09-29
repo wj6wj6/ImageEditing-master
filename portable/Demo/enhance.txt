@@ -1,0 +1,3 @@
+load Images/wiz.tga
+filter-enhance
+save Output/enhance.png

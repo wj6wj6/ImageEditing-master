@@ -71,6 +71,7 @@ if(IMAGEEDITING_BUILD_PORTABLE)
     install(DIRECTORY "${PROJECT_SOURCE_DIR}/Images" DESTINATION .)
     install(DIRECTORY DESTINATION Output)
     install(FILES portable/Start.bat portable/demo.txt portable/README.txt DESTINATION .)
+    install(DIRECTORY portable/Demo portable/Reference DESTINATION .)
     install(FILES include/stb/LICENSE DESTINATION Licenses RENAME stb.txt)
 
     set(CPACK_GENERATOR ZIP)
