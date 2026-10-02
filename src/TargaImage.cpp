@@ -1218,9 +1218,10 @@ bool TargaImage::Dither_Cluster()
         for (int x = 0; x < width; ++x)
         {
             unsigned char* pixel = data + (static_cast<size_t>(y) * width + x) * 4;
-            // Keep the PDF's explicit mask[x % 4][y % 4] convention and values.
+            // The PDF's I[x][y] / mask[x % 4][y % 4] indexes rows first, so the
+            // first index is the row (y). This matches the reference program.
             const double intensity = static_cast<unsigned char>(Luminance(pixel)) / 255.0;
-            SetGray(pixel, intensity >= mask[x % 4][y % 4] ? 255 : 0);
+            SetGray(pixel, intensity >= mask[y % 4][x % 4] ? 255 : 0);
         }
     return true;
 }// Dither_Cluster
