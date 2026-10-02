@@ -1,5 +1,8 @@
 # ImageEditing
 
+完整的架構、資料格式、演算法、指令、建置測試與已知限制，請參閱
+[專案技術文件（Tech Doc）](docs/TECH_DOC.md)。
+
 The existing command input and scripts support `.tga`, `.png`, `.jpg`, and
 `.jpeg`. Extensions are case insensitive. Files without an extension retain
 the original TGA behavior. Other output extensions are rejected.
