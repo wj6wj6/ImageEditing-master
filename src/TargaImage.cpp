@@ -246,7 +246,7 @@ namespace
 
         // Working copy in double, so the diffused error is not rounded away.
         vector<double> work(PixelCount(image) * channels);
-        for (int p = 0; p < w * h; ++p)
+        for (int p = 0; p < PixelCount(image); ++p)
             for (int c = 0; c < channels; ++c)
                 work[p * channels + c] = color ? image.data[p * 4 + c]
                                                : GrayValue(image.data + p * 4);
@@ -318,9 +318,9 @@ namespace
             return false;
 
         // Porter-Duff factors apply directly to the stored premultiplied RGBA.
-        for (size_t p = 0; p < PixelCount(foreground); ++p)
+        for (int p = 0; p < PixelCount(foreground); ++p)
         {
-            const size_t i = p * 4;
+            const int i = p * 4;
             const double a = foreground.data[i + 3] / 255.0;
             const double b = background->data[i + 3] / 255.0;
             double fa = 1.0, fb = 1.0 - a;
@@ -469,7 +469,7 @@ bool TargaImage::Save_Image(const char *filename)
     {
         const int channels = format == IMAGE_PNG ? 4 : 3;
         vector<unsigned char> pixels(PixelCount(*this) * channels);
-        for (size_t p = 0; p < PixelCount(*this); ++p)
+        for (int p = 0; p < PixelCount(*this); ++p)
         {
             const unsigned int alpha = data[p * 4 + 3];
             for (int c = 0; c < 3; ++c)
@@ -598,7 +598,7 @@ TargaImage* TargaImage::Load_Image(char *filename)
 bool TargaImage::To_Grayscale()
 {
     if (!ValidImage(*this)) return false;
-    for (int p = 0; p < width * height; ++p)
+    for (int p = 0; p < PixelCount(*this); ++p)
     {
         unsigned char* pixel = data + p * 4;
         SetGray(pixel, GrayValue(pixel));   // gray = 0.299 R + 0.587 G + 0.114 B
@@ -618,7 +618,7 @@ bool TargaImage::Quant_Uniform()
 {
     if (!ValidImage(*this)) return false;
     // 8 levels of red, 8 of green, 4 of blue: 8 * 8 * 4 = 256 colors.
-    for (int p = 0; p < width * height; ++p)
+    for (int p = 0; p < PixelCount(*this); ++p)
     {
         unsigned char* pixel = data + p * 4;
         const int rLevel = pixel[RED] >> 5;     // 0~7
@@ -641,7 +641,7 @@ bool TargaImage::Quant_Uniform()
 bool TargaImage::Quant_Populosity()
 {
     if (!ValidImage(*this)) return false;
-    const int pixelCount = width * height;
+    const int pixelCount = PixelCount(*this);
 
     // Step 1: histogram. Keep 5 bits per channel, so there are 32 x 32 x 32 bins.
     vector<int> histogram(32 * 32 * 32, 0);
@@ -685,7 +685,7 @@ bool TargaImage::Quant_Populosity()
 bool TargaImage::Dither_Threshold()
 {
     if (!ValidImage(*this)) return false;
-    for (int p = 0; p < width * height; ++p)
+    for (int p = 0; p < PixelCount(*this); ++p)
     {
         unsigned char* pixel = data + p * 4;
         SetGray(pixel, GrayValue(pixel) >= 128 ? 255 : 0);   // threshold 0.5
@@ -704,7 +704,7 @@ bool TargaImage::Dither_Random()
     if (!ValidImage(*this)) return false;
     mt19937 randomEngine((random_device())());
     uniform_real_distribution<double> noise(-0.2, 0.2);
-    for (int p = 0; p < width * height; ++p)
+    for (int p = 0; p < PixelCount(*this); ++p)
     {
         unsigned char* pixel = data + p * 4;
         // Add a random value in [-0.2, 0.2], then threshold at 0.5.
@@ -736,7 +736,7 @@ bool TargaImage::Dither_FS()
 bool TargaImage::Dither_Bright()
 {
     if (!ValidImage(*this)) return false;
-    const int pixelCount = width * height;
+    const int pixelCount = PixelCount(*this);
 
     // Count the pixels at each gray level, and the total brightness.
     vector<int> levelCount(256, 0);
@@ -1003,7 +1003,7 @@ bool TargaImage::NPR_Paint()
 
     // Simplified circular-stroke algorithm from Hertzmann, SIGGRAPH 1998,
     // section 2.1: https://mrl.cs.nyu.edu/publications/painterly98/
-    const int pixelCount = width * height;
+    const int pixelCount = PixelCount(*this);
 
     // Paint on an opaque copy; remember the alpha to restore it at the end.
     TargaImage source(*this);

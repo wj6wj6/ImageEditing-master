@@ -19,9 +19,12 @@ inline bool ValidImage(const TargaImage& image)
         static_cast<size_t>(image.width) * image.height <= INT_MAX / 4;
 }
 
-inline size_t PixelCount(const TargaImage& image)
+// Number of pixels (width * height). Use this whenever a loop only needs the
+// pixel index p, and not the (x, y) position. ValidImage guarantees that
+// width * height * 4 fits in an int, so an int is enough.
+inline int PixelCount(const TargaImage& image)
 {
-    return static_cast<size_t>(image.width) * image.height;
+    return image.width * image.height;
 }
 
 inline unsigned char ClampByte(double value)
