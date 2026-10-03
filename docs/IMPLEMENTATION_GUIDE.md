@@ -876,7 +876,7 @@ Basic 版本會先把工作來源改成不透明，參考圖也沒有依原始 A
 
 油畫、卡通與水彩共同對應評分表的 Advance NPR（10–50 分）項目，不是三個各自累加的 10–50 分。油畫在 Basic 的多尺度架構上加入沿輪廓延伸的曲線筆觸、粗細變化、半透明疊色與刷毛紋理。
 
-入口：[NPR_Paint_Advanced()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1526>)。
+入口：[NPR_Paint_Advanced()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>)。
 
 ```text
 load Images/wiz.tga
@@ -906,7 +906,7 @@ $$
 
 ### 21.3 Alpha 正規化的 Gaussian 參考圖
 
-[PaintReference()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:194>) 設定 `sigma=max(0.5,radius/2)`、半寬 `ceil(3*sigma)`，以 `exp(-k²/(2*sigma²))` 建立正規化的一維 Gaussian 核。水平與垂直分開處理，邊界透過 `Reflect()` 鏡射。
+[PaintReference()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 設定 `sigma=max(0.5,radius/2)`、半寬 `ceil(3*sigma)`，以 `exp(-k²/(2*sigma²))` 建立正規化的一維 Gaussian 核。水平與垂直分開處理，邊界透過 `Reflect()` 鏡射。
 
 它同時模糊**預乘 RGB 和 Alpha**，再還原參考顏色：
 
@@ -934,18 +934,18 @@ $$
 
 ### 21.5 沿亮度等高線雙向追蹤
 
-[PaintGradient()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:238>) 先計算 `L=0.299R+0.587G+0.114B`，再用 Sobel 核除以 8 取得 `(Gx,Gy)`：
+[PaintGradient()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 先計算 `L=0.299R+0.587G+0.114B`，再用 Sobel 核除以 8 取得 `(Gx,Gy)`：
 
 ```text
 Gx = [-1  0  1; -2  0  2; -1  0  1] / 8
 Gy = [-1 -2 -1;  0  0  0;  1  2  1] / 8
 ```
 
-[TracePaintStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:286>) 取垂直於梯度的方向 `(-Gy,Gx)`，讓筆觸沿著近似相同亮度的輪廓延伸。
+[TracePaintStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 取垂直於梯度的方向 `(-Gy,Gx)`，讓筆觸沿著近似相同亮度的輪廓延伸。
 
 例如梯度 `(3,4)`，垂直方向 `(-4,3)`，正規化後為 `(-0.8,0.6)`。半徑 4 時，一步位移 `(-3.2,2.4)`，所以 `(50,50)` 的下一點可為 `(46.8,52.4)`。另一側沿相反方向延伸。
 
-每側最多七步，每步距離等於半徑；加上起點，最多 15 個控制點。小數位置的梯度由 [SamplePaintGradient()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:263>) 做雙線性內插。
+每側最多七步，每步距離等於半徑；加上起點，最多 15 個控制點。小數位置的梯度由 [SamplePaintGradient()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 做雙線性內插。
 
 為避免方向折返，若新舊方向內積小於零便把新方向反轉，再混合 `65% 新方向 + 35% 舊方向` 並正規化。梯度太弱時沿用前一方向；起步的平坦區域使用帶種子控制的預設方向。
 
@@ -960,7 +960,7 @@ strokeError > 85.0 * 85.0 ||
 
 ### 21.6 B-spline、筆形與刷毛
 
-[PaintSpline()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:360>) 以均勻三次 B-spline 平滑控制點。每四個點使用以下權重：
+[PaintSpline()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 以均勻三次 B-spline 平滑控制點。每四個點使用以下權重：
 
 $$
 P(t)=\frac{(1-t)^3P_0+(4-6t^2+3t^3)P_1+(1+3t+3t^2-3t^3)P_2+t^3P_3}{6}
@@ -968,7 +968,7 @@ $$
 
 程式取 `t=0,0.25,0.5,0.75`，重複端點讓曲線到達筆觸兩端。若只有一個控制點，繪製時退化成圓形足跡。
 
-[DrawPaintStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:382>) 沿曲線小線段繪製；局部半徑為：
+[DrawPaintStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 沿曲線小線段繪製；局部半徑為：
 
 $$
 r(p)=r_0(0.65+0.35\sin(\pi p))
@@ -1020,7 +1020,7 @@ $$
 
 ### 22.1 目的與指令
 
-卡通效果把連續顏色整理成分階色塊，再加上深色輪廓。入口是 [NPR_Cartoon()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1619>)。
+卡通效果把連續顏色整理成分階色塊，再加上深色輪廓。入口是 [NPR_Cartoon()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>)。
 
 ```text
 load Images/wiz.tga
@@ -1032,7 +1032,7 @@ save Output/cartoon.png
 
 ### 22.2 三次雙邊濾波：平滑相近顏色、保留明顯邊界
 
-[BilateralPaint()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:468>) 先將預乘 RGB 還原為浮點顏色，半徑取 `clamp(int(2+strength),2,5)`。預設半徑 3，每輪查看 7 × 7 鄰域，共執行三輪。
+[BilateralPaint()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 先將預乘 RGB 還原為浮點顏色，半徑取 `clamp(int(2+strength),2,5)`。預設半徑 3，每輪查看 7 × 7 鄰域，共執行三輪。
 
 中心 `p` 與鄰居 `q` 的權重同時考慮距離、色差與原圖 Alpha：
 
@@ -1051,7 +1051,7 @@ RGB 每通道差 10 時，顏色權重約 `exp(-300/9600)=0.969`；每通道差 
 
 ### 22.3 在 HSV 空間整理色塊
 
-[CelPaintColor()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:525>) 將平滑後 RGB 轉成 HSV，分別量化：
+[CelPaintColor()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 將平滑後 RGB 轉成 HSV，分別量化：
 
 | 分量 | 處理 |
 |---|---|
@@ -1144,7 +1144,7 @@ $$
 
 水彩用柔和曲線薄塗、局部擴散、沉積邊與紙張顆粒，近似水彩外觀。它是程序化外觀模型，沒有求解真正的流體、水分蒸發或顏料運輸方程。
 
-入口：[NPR_Watercolor()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1689>)。
+入口：[NPR_Watercolor()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>)。
 
 ```text
 load Images/wiz.tga
@@ -1162,7 +1162,7 @@ $$
 
 ### 23.2 先建立濕度與顆粒控制圖
 
-[PaintNoise()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:450>) 根據座標與種子計算 0～1 的數值；[PaintValueNoise()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:459>) 對四個鄰接噪聲點以平滑權重內插。
+[PaintNoise()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 根據座標與種子計算 0～1 的數值；[PaintValueNoise()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 對四個鄰接噪聲點以平滑權重內插。
 
 ```text
 wetness     = 0.65 * 大範圍平滑噪聲 + 0.35 * 小範圍平滑噪聲
@@ -1175,7 +1175,7 @@ granulation = 0.60 * 逐像素噪聲     + 0.40 * 小範圍平滑噪聲
 
 ### 23.3 相對紙張的顏料密度
 
-[WaterPigment()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:561>) 使用紙色 `P=(244,237,219)`。先把參考色混入紙色，再對暗部加入 `(-3,1,6)` 的冷色調整：
+[WaterPigment()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 使用紙色 `P=(244,237,219)`。先把參考色混入紙色，再對暗部加入 `(-3,1,6)` 的冷色調整：
 
 $$
 C=0.86C_{source}+0.14P+(-3,1,6)shadow
@@ -1199,7 +1199,7 @@ $$
 
 筆觸沿用油畫的 `TracePaintStroke()` 與 B-spline：雙向追蹤、色差停止條件、平坦區域方向及顏色小幅擾動都保留。第一層筆觸不透明度改成 0.50，後兩層為 0.42。
 
-所有筆觸先規劃，再打亂順序，交給 [DrawWatercolorStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:573>) 更新密度。
+所有筆觸先規劃，再打亂順序，交給 [DrawWatercolorStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImageNPR.cpp>) 更新密度。
 
 ### 23.5 濕度影響擴散寬度
 
