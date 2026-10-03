@@ -4,6 +4,8 @@
 
 文件日期：2026-09-30。內容依目前 `ImageEditing/ImageEditing-master` 工作樹的原始碼、CMake 設定與測試撰寫。以下「專案根目錄」均指 `ImageEditing-master`，不是外層的 `P1`；指令範例皆從專案根目錄執行。
 
+2026-10-03 補充：[依評分表逐項實作詳解](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/docs/IMPLEMENTATION_GUIDE.md>) 提供各項公式、程式位置、數值例子與展示說法。本頁 Cluster 索引已同步為目前程式的 `mask[y % 4][x % 4]`；第 9.2 節仍是 2026-09-30 的歷史測試紀錄，不代表這次重新執行測試。
+
 本文件供程式維護、技術報告與展示說明使用。操作步驟見 [使用手冊](USER_MANUAL.md)，NPR 的細部設計與既有成果見 [NPR 技術說明](NPR_TECHNICAL.md)。本文件記錄目前行為；舊導覽中「演算法仍清成黑色」的狀態已不適用。
 
 ## 1. 系統範圍與技術組成
@@ -206,9 +208,9 @@ Populosity 的步驟如下：
 | 方法 | 實作重點 |
 | --- | --- |
 | Threshold | 亮度轉 byte 後，以 128 為閾值輸出 0 或 255 |
-| Random | 正規化亮度加入均勻分布 `[-0.2, 0.2]` 擾動，再以 0.5 二值化；每次由 `random_device` 取種子 |
+| Random | 正規化亮度加入均勻分布 `[-0.2, 0.2)` 擾動，再以 0.5 二值化；每次由 `random_device` 取種子 |
 | Brightness | 先計算 `whiteCount = round(sum(Y / 255))`，用 `nth_element` 選出最亮的指定數量像素 |
-| Cluster | 使用固定 4×4 閾值矩陣，以 `mask[x % 4][y % 4]` 比較正規化亮度 |
+| Cluster | 使用固定 4×4 閾值矩陣，以 `mask[y % 4][x % 4]` 比較正規化亮度；先取列 y，再取欄 x |
 | Floyd–Steinberg | 每列交替左右掃描；量化誤差以 7/16、3/16、5/16、1/16 分配至尚未處理的鄰居，反向列鏡射方向 |
 | Color | 三個通道分別執行誤差擴散，取距離最近的 Uniform 色階；色階集合相同，但選階方式與 `quant-unif` 的位元分桶不同 |
 
