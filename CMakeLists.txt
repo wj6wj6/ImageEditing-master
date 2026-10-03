@@ -21,7 +21,9 @@ add_executable(ImageEditing
     ${SRC_DIR}ScriptHandler.h
     ${SRC_DIR}ScriptHandler.cpp
     ${SRC_DIR}TargaImage.h
-    ${SRC_DIR}TargaImage.cpp)
+    ${SRC_DIR}TargaImage.cpp
+    ${SRC_DIR}TargaImageNPR.cpp
+    ${SRC_DIR}ImageUtils.h)
 
 add_library(libtarga ${SRC_DIR}libtarga.h ${SRC_DIR}libtarga.c)
 
