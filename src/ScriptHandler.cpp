@@ -351,111 +351,36 @@ bool CScriptHandler::HandleCommand(const char* sCommand, TargaImage*& pImage)
         }// SCALE
 
         case COMP_OVER:
-        {
-            char* sFilename = strtok(NULL, c_sWhiteSpace);
-            TargaImage* pNewImage = TargaImage::Load_Image(sFilename);
-            if (!pNewImage)
-            {
-                if (sFilename)
-                    cout << "Unable to load image:  " << sFilename << endl;
-                else
-                    cout << "No filename given." << endl;
-                bParsed = false;
-            }// if
-            bResult = pNewImage && pImage->Comp_Over(pNewImage);
-            delete pNewImage;
-            break;
-        }// COMP_OVER
-
         case COMP_IN:
-        {
-            char* sFilename = strtok(NULL, c_sWhiteSpace);
-            TargaImage* pNewImage = TargaImage::Load_Image(sFilename);
-            if (!pNewImage)
-            {
-                if (sFilename)
-                    cout << "Unable to load image:  " << sFilename << endl;
-                else
-                    cout << "No filename given." << endl;
-
-                bParsed = false;
-            }// if
-            bResult = pNewImage && pImage->Comp_In(pNewImage);
-            delete pNewImage;
-            break;
-        }// COMP_IN
-
         case COMP_OUT:
-        {
-            char* sFilename = strtok(NULL, c_sWhiteSpace);
-            TargaImage* pNewImage = TargaImage::Load_Image(sFilename);
-            if (!pNewImage)
-            {
-                if (sFilename)
-                    cout << "Unable to load image:  " << sFilename << endl;
-                else
-                    cout << "No filename given." << endl;
-
-                bParsed = false;
-            }// if
-            bResult = pNewImage && pImage->Comp_Out(pNewImage);
-            delete pNewImage;
-            break;
-        }// COMP_OUT
-
         case COMP_ATOP:
-        {
-            char* sFilename = strtok(NULL, c_sWhiteSpace);
-            TargaImage* pNewImage = TargaImage::Load_Image(sFilename);
-            if (!pNewImage)
-            {
-                if (sFilename)
-                    cout << "Unable to load image:  " << sFilename << endl;
-                else
-                    cout << "No filename given." << endl;
-
-                bParsed = false;
-            }// if
-            bResult = pNewImage && pImage->Comp_Atop(pNewImage);
-            delete pNewImage;
-            break;
-        }// COMP_ATOP
-
         case COMP_XOR:
-        {
-            char* sFilename = strtok(NULL, c_sWhiteSpace);
-            TargaImage* pNewImage = TargaImage::Load_Image(sFilename);
-            if (!pNewImage)
-            {
-                if (sFilename)
-                    cout << "Unable to load image:  " << sFilename << endl;
-                else
-                    cout << "No filename given." << endl;
-
-                bParsed = false;
-            }// if
-            bResult = pNewImage && pImage->Comp_Xor(pNewImage);
-            delete pNewImage;
-            break;
-        }// COMP_XOR
-
         case DIFF:
         {
+            // All of these take a second image file as the argument.
             char* sFilename = strtok(NULL, c_sWhiteSpace);
             TargaImage* pNewImage = TargaImage::Load_Image(sFilename);
             if (!pNewImage)
             {
                 if (sFilename)
                     cout << "Unable to load image:  " << sFilename << endl;
-                else
+                else if (command == DIFF)
                     cout << "Unable to load image:  " << endl;
-
-                bParsed = false;
+                else
+                    cout << "No filename given." << endl;
+                bResult = bParsed = false;
+                break;
             }// if
-            bResult = pNewImage && pImage->Difference(pNewImage);
+
+            if (command == COMP_OVER)      bResult = pImage->Comp_Over(pNewImage);
+            else if (command == COMP_IN)   bResult = pImage->Comp_In(pNewImage);
+            else if (command == COMP_OUT)  bResult = pImage->Comp_Out(pNewImage);
+            else if (command == COMP_ATOP) bResult = pImage->Comp_Atop(pNewImage);
+            else if (command == COMP_XOR)  bResult = pImage->Comp_Xor(pNewImage);
+            else                           bResult = pImage->Difference(pNewImage);
             delete pNewImage;
             break;
-        }// DIFF
+        }// COMP_* and DIFF
 
         case ROTATE:
         {
@@ -469,8 +394,6 @@ bool CScriptHandler::HandleCommand(const char* sCommand, TargaImage*& pImage)
             }// if
             else
                 bResult = pImage->Rotate(angle);
-            break;
-
             break;
         }// ROTATE
 
