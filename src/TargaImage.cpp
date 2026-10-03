@@ -26,7 +26,6 @@
 #include <algorithm>
 #include <climits>
 #include <random>
-#include <unordered_map>
 #include <cctype>
 #include <memory>
 #include <string>
@@ -96,6 +95,12 @@ namespace
         return 0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2];
     }
 
+    // Gray level 0~255 of a pixel (the same value To_Grayscale writes).
+    unsigned char GrayValue(const unsigned char* pixel)
+    {
+        return static_cast<unsigned char>(Luminance(pixel));
+    }
+
     void SetGray(unsigned char* pixel, unsigned char value)
     {
         pixel[0] = pixel[1] = pixel[2] = value;
@@ -130,47 +135,50 @@ namespace
 
     enum FilterMode { BLUR, HIGH_PASS, SHARPEN };
 
+    // Filter the RGB channels with kernel x kernel (alpha is left unchanged).
+    // The 2-D mask is the outer product of the 1-D kernel, so we can filter
+    // each row first and then each column. Pixels outside the image are
+    // taken from the mirrored position (see Reflect).
     bool FilterRGB(TargaImage& image, const vector<double>& kernel,
                    FilterMode mode = BLUR)
     {
         if (!ValidImage(image) || kernel.empty() || kernel.size() % 2 == 0)
             return false;
 
+        const int w = image.width, h = image.height;
         const int radius = static_cast<int>(kernel.size() / 2);
-        vector<double> horizontal(PixelCount(image) * 3, 0.0);
-        // The masks are separable: two 1-D passes cost O(N), rather than O(N^2).
-        // Keep the intermediate values in floating point, and never filter alpha.
-        for (int y = 0; y < image.height; ++y)
-            for (int x = 0; x < image.width; ++x)
-                for (size_t k = 0; k < kernel.size(); ++k)
+
+        // Pass 1: horizontal filter, result kept as double (3 values per pixel).
+        vector<double> rows(PixelCount(image) * 3, 0.0);
+        for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x)
+                for (int k = -radius; k <= radius; ++k)
                 {
-                    const int sx = Reflect(static_cast<long long>(x) + static_cast<long long>(k) - radius,
-                                           image.width);
-                    const size_t src = (static_cast<size_t>(y) * image.width + sx) * 4;
-                    const size_t dst = (static_cast<size_t>(y) * image.width + x) * 3;
+                    const int src = (y * w + Reflect(x + k, w)) * 4;
+                    const int dst = (y * w + x) * 3;
                     for (int c = 0; c < 3; ++c)
-                        horizontal[dst + c] += kernel[k] * image.data[src + c];
+                        rows[dst + c] += kernel[k + radius] * image.data[src + c];
                 }
 
-        for (int y = 0; y < image.height; ++y)
-            for (int x = 0; x < image.width; ++x)
+        // Pass 2: vertical filter on the result of pass 1.
+        for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x)
             {
                 double blurred[3] = { 0.0, 0.0, 0.0 };
-                for (size_t k = 0; k < kernel.size(); ++k)
+                for (int k = -radius; k <= radius; ++k)
                 {
-                    const int sy = Reflect(static_cast<long long>(y) + static_cast<long long>(k) - radius,
-                                           image.height);
-                    const size_t src = (static_cast<size_t>(sy) * image.width + x) * 3;
+                    const int src = (Reflect(y + k, h) * w + x) * 3;
                     for (int c = 0; c < 3; ++c)
-                        blurred[c] += kernel[k] * horizontal[src + c];
+                        blurred[c] += kernel[k + radius] * rows[src + c];
                 }
-                const size_t dst = (static_cast<size_t>(y) * image.width + x) * 4;
+
+                unsigned char* pixel = image.data + (y * w + x) * 4;
                 for (int c = 0; c < 3; ++c)
                 {
-                    double value = blurred[c];
-                    if (mode == HIGH_PASS) value = image.data[dst + c] - value;
-                    if (mode == SHARPEN) value = 2.0 * image.data[dst + c] - value;
-                    image.data[dst + c] = ClampByte(value);
+                    double value = blurred[c];                               // low pass
+                    if (mode == HIGH_PASS) value = pixel[c] - value;         // original - low pass
+                    if (mode == SHARPEN) value = 2.0 * pixel[c] - value;     // original + high pass
+                    pixel[c] = ClampByte(value);
                 }
             }
         return true;
@@ -632,6 +640,78 @@ namespace
             }
     }
 
+    // Euclidean RGB distance between two pixels.
+    double ColorDistance(const unsigned char* a, const unsigned char* b)
+    {
+        double squaredDistance = 0.0;
+        for (int c = 0; c < 3; ++c)
+        {
+            const double delta = a[c] - b[c];
+            squaredDistance += delta * delta;
+        }
+        return sqrt(squaredDistance);
+    }
+
+    // NPR_Paint helper: look at the cell of pixels within "half" of (x, y).
+    // Returns the average error in the cell, and the pixel with the largest
+    // error through bestX / bestY.
+    double GridCellError(const vector<double>& difference, int w, int h,
+                         int x, int y, int half, int& bestX, int& bestY)
+    {
+        double sum = 0.0;
+        int samples = 0;
+        bestX = x;
+        bestY = y;
+        double largestError = difference[y * w + x];
+        for (int sy = Max(0, y - half); sy <= Min(h - 1, y + half); ++sy)
+            for (int sx = Max(0, x - half); sx <= Min(w - 1, x + half); ++sx)
+            {
+                const double error = difference[sy * w + sx];
+                sum += error;
+                ++samples;
+                if (error > largestError)
+                {
+                    largestError = error;
+                    bestX = sx;
+                    bestY = sy;
+                }
+            }
+        return sum / samples;
+    }
+
+    // Populosity helpers: a color is put in a bin by its top 5 bits per channel.
+    struct PaletteColor { int r, g, b; };
+
+    int ColorBin(int r, int g, int b)
+    {
+        return ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+    }
+
+    PaletteColor BinColor(int bin)
+    {
+        PaletteColor color = { ((bin >> 10) & 31) << 3, ((bin >> 5) & 31) << 3, (bin & 31) << 3 };
+        return color;
+    }
+
+    // Index of the palette color with the smallest squared RGB distance.
+    int NearestPaletteIndex(const vector<PaletteColor>& palette, const unsigned char* pixel)
+    {
+        int nearest = 0, bestDistance = INT_MAX;
+        for (int i = 0; i < static_cast<int>(palette.size()); ++i)
+        {
+            const int dr = pixel[RED] - palette[i].r;
+            const int dg = pixel[GREEN] - palette[i].g;
+            const int db = pixel[BLUE] - palette[i].b;
+            const int distance = dr * dr + dg * dg + db * db;
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                nearest = i;
+            }
+        }
+        return nearest;
+    }
+
     unsigned char NearestUniform(double value, int channel)
     {
         const int rg[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
@@ -644,41 +724,48 @@ namespace
         return static_cast<unsigned char>(palette[nearest]);
     }
 
+    // Floyd-Steinberg dithering.
+    //   color == false: black/white from the gray value (Dither_FS).
+    //   color == true : each of R, G, B to the uniform palette (Dither_Color).
     bool FloydSteinberg(TargaImage& image, bool color)
     {
         if (!ValidImage(image)) return false;
+        const int w = image.width, h = image.height;
         const int channels = color ? 3 : 1;
+
+        // Working copy in double, so the diffused error is not rounded away.
         vector<double> work(PixelCount(image) * channels);
-        for (size_t p = 0; p < PixelCount(image); ++p)
+        for (int p = 0; p < w * h; ++p)
             for (int c = 0; c < channels; ++c)
                 work[p * channels + c] = color ? image.data[p * 4 + c]
-                    : static_cast<unsigned char>(Luminance(image.data + p * 4));
+                                               : GrayValue(image.data + p * 4);
 
-        // Serpentine traversal: mirror the diffusion stencil on every other row.
-        for (int y = 0; y < image.height; ++y)
+        // Error goes to: right 7/16, lower-left 3/16, below 5/16, lower-right 1/16.
+        // On odd rows we walk right-to-left (serpentine), so left/right swap.
+        const int dy[4] = { 0, 1, 1, 1 };
+        const double weights[4] = { 7.0 / 16, 3.0 / 16, 5.0 / 16, 1.0 / 16 };
+        for (int y = 0; y < h; ++y)
         {
             const int direction = y % 2 == 0 ? 1 : -1;
-            for (int x = direction == 1 ? 0 : image.width - 1;
-                 x >= 0 && x < image.width; x += direction)
+            const int dx[4] = { direction, -direction, 0, direction };
+            for (int i = 0; i < w; ++i)
             {
-                const size_t p = static_cast<size_t>(y) * image.width + x;
+                const int x = direction == 1 ? i : w - 1 - i;
+                const int p = y * w + x;
                 for (int c = 0; c < channels; ++c)
                 {
                     const double oldValue = work[p * channels + c];
-                    const unsigned char value = color ? NearestUniform(oldValue, c)
-                                                       : (oldValue >= 127.5 ? 255 : 0);
-                    if (color) image.data[p * 4 + c] = value;
-                    else SetGray(image.data + p * 4, value);
-                    const double error = oldValue - value;
-                    const int dx[4] = { direction, -direction, 0, direction };
-                    const int dy[4] = { 0, 1, 1, 1 };
-                    const double weights[4] = { 7.0 / 16, 3.0 / 16, 5.0 / 16, 1.0 / 16 };
+                    const unsigned char newValue = color ? NearestUniform(oldValue, c)
+                                                         : (oldValue >= 127.5 ? 255 : 0);
+                    if (color) image.data[p * 4 + c] = newValue;
+                    else SetGray(image.data + p * 4, newValue);
+
+                    const double error = oldValue - newValue;
                     for (int n = 0; n < 4; ++n)
                     {
                         const int nx = x + dx[n], ny = y + dy[n];
-                        if (nx >= 0 && nx < image.width && ny < image.height)
-                            work[(static_cast<size_t>(ny) * image.width + nx) * channels + c]
-                                += error * weights[n];
+                        if (nx >= 0 && nx < w && ny < h)
+                            work[(ny * w + nx) * channels + c] += error * weights[n];
                     }
                 }
             }
@@ -999,23 +1086,13 @@ TargaImage* TargaImage::Load_Image(char *filename)
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::To_Grayscale()
 {
-	if (!ValidImage(*this)) return false;
-	for (int i = 0; i < width * height * 4; i += 4)
+    if (!ValidImage(*this)) return false;
+    for (int p = 0; p < width * height; ++p)
     {
-        unsigned char r = data[i];
-        unsigned char g = data[i + 1];
-        unsigned char b = data[i + 2];
-
-        unsigned char gray =
-            (unsigned char)(0.299 * r + 0.587 * g + 0.114 * b);
-
-        data[i]     = gray;
-        data[i + 1] = gray;
-        data[i + 2] = gray;
-
-        // Keep alpha unchanged.
+        unsigned char* pixel = data + p * 4;
+        SetGray(pixel, GrayValue(pixel));   // gray = 0.299 R + 0.587 G + 0.114 B
+        // Alpha (pixel[3]) is left unchanged.
     }
-
     return true;
 }// To_Grayscale
 
@@ -1029,23 +1106,17 @@ bool TargaImage::To_Grayscale()
 bool TargaImage::Quant_Uniform()
 {
     if (!ValidImage(*this)) return false;
-    for (int i = 0; i < width * height * 4; i += 4)
+    // 8 levels of red, 8 of green, 4 of blue: 8 * 8 * 4 = 256 colors.
+    for (int p = 0; p < width * height; ++p)
     {
-        int r = data[i];
-        int g = data[i + 1];
-        int b = data[i + 2];
-
-        int rLevel = r >> 5;  // 0~7
-        int gLevel = g >> 5;  // 0~7
-        int bLevel = b >> 6;  // 0~3
-
-        data[i]     = (unsigned char)round(rLevel * 255.0 / 7.0);
-        data[i + 1] = (unsigned char)round(gLevel * 255.0 / 7.0);
-        data[i + 2] = (unsigned char)round(bLevel * 255.0 / 3.0);
-
-        // Keep alpha unchanged.
+        unsigned char* pixel = data + p * 4;
+        const int rLevel = pixel[RED] >> 5;     // 0~7
+        const int gLevel = pixel[GREEN] >> 5;   // 0~7
+        const int bLevel = pixel[BLUE] >> 6;    // 0~3
+        pixel[RED]   = (unsigned char)round(rLevel * 255.0 / 7.0);
+        pixel[GREEN] = (unsigned char)round(gLevel * 255.0 / 7.0);
+        pixel[BLUE]  = (unsigned char)round(bLevel * 255.0 / 3.0);
     }
-
     return true;
 }// Quant_Uniform
 
@@ -1059,62 +1130,37 @@ bool TargaImage::Quant_Uniform()
 bool TargaImage::Quant_Populosity()
 {
     if (!ValidImage(*this)) return false;
+    const int pixelCount = width * height;
 
-    // Five bits per primary give a compact 32 x 32 x 32 histogram.
-    vector<size_t> histogram(32768, 0);
-    for (size_t p = 0; p < PixelCount(*this); ++p)
+    // Step 1: histogram. Keep 5 bits per channel, so there are 32 x 32 x 32 bins.
+    vector<int> histogram(32 * 32 * 32, 0);
+    for (int p = 0; p < pixelCount; ++p)
     {
         const unsigned char* pixel = data + p * 4;
-        const int bin = ((pixel[0] >> 3) << 10) | ((pixel[1] >> 3) << 5) | (pixel[2] >> 3);
-        ++histogram[bin];
-    }
-    vector<int> popular;
-    for (int bin = 0; bin < 32768; ++bin)
-        if (histogram[bin]) popular.push_back(bin);
-    sort(popular.begin(), popular.end(), [&histogram](int a, int b) {
-        return histogram[a] != histogram[b] ? histogram[a] > histogram[b] : a < b;
-    });
-    if (popular.size() > 256) popular.resize(256);
-
-    struct Color { int r, g, b; };
-    vector<Color> palette;
-    for (size_t i = 0; i < popular.size(); ++i)
-    {
-        const int bin = popular[i];
-        Color color = { ((bin >> 10) & 31) << 3, ((bin >> 5) & 31) << 3, (bin & 31) << 3 };
-        palette.push_back(color);
+        ++histogram[ColorBin(pixel[RED], pixel[GREEN], pixel[BLUE])];
     }
 
-    // Cache by the ORIGINAL 24-bit color, not its 5-bit histogram bin: two
-    // original colors in the same bin can have different nearest palette colors.
-    unordered_map<unsigned int, size_t> lookup;
-    for (size_t p = 0; p < PixelCount(*this); ++p)
+    // Step 2: the (at most) 256 most popular bins become the palette.
+    // stable_sort keeps bins with equal counts in increasing bin order.
+    vector<int> bins;
+    for (int bin = 0; bin < 32 * 32 * 32; ++bin)
+        if (histogram[bin] > 0) bins.push_back(bin);
+    stable_sort(bins.begin(), bins.end(),
+                [&histogram](int a, int b) { return histogram[a] > histogram[b]; });
+    if (bins.size() > 256) bins.resize(256);
+
+    vector<PaletteColor> palette;
+    for (size_t i = 0; i < bins.size(); ++i)
+        palette.push_back(BinColor(bins[i]));
+
+    // Step 3: replace every pixel with the closest palette color.
+    for (int p = 0; p < pixelCount; ++p)
     {
         unsigned char* pixel = data + p * 4;
-        const unsigned int key = (pixel[0] << 16) | (pixel[1] << 8) | pixel[2];
-        unordered_map<unsigned int, size_t>::const_iterator found = lookup.find(key);
-        size_t nearest = 0;
-        if (found != lookup.end()) nearest = found->second;
-        else
-        {
-            int bestDistance = INT_MAX;
-            for (size_t i = 0; i < palette.size(); ++i)
-            {
-                const int dr = pixel[0] - palette[i].r;
-                const int dg = pixel[1] - palette[i].g;
-                const int db = pixel[2] - palette[i].b;
-                const int distance = dr * dr + dg * dg + db * db;
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    nearest = i;
-                }
-            }
-            lookup[key] = nearest;
-        }
-        pixel[0] = static_cast<unsigned char>(palette[nearest].r);
-        pixel[1] = static_cast<unsigned char>(palette[nearest].g);
-        pixel[2] = static_cast<unsigned char>(palette[nearest].b);
+        const PaletteColor& nearest = palette[NearestPaletteIndex(palette, pixel)];
+        pixel[RED]   = static_cast<unsigned char>(nearest.r);
+        pixel[GREEN] = static_cast<unsigned char>(nearest.g);
+        pixel[BLUE]  = static_cast<unsigned char>(nearest.b);
     }
     return true;
 }// Quant_Populosity
@@ -1128,9 +1174,11 @@ bool TargaImage::Quant_Populosity()
 bool TargaImage::Dither_Threshold()
 {
     if (!ValidImage(*this)) return false;
-    for (size_t p = 0; p < PixelCount(*this); ++p)
-        SetGray(data + p * 4,
-            static_cast<unsigned char>(Luminance(data + p * 4)) >= 128 ? 255 : 0);
+    for (int p = 0; p < width * height; ++p)
+    {
+        unsigned char* pixel = data + p * 4;
+        SetGray(pixel, GrayValue(pixel) >= 128 ? 255 : 0);   // threshold 0.5
+    }
     return true;
 }// Dither_Threshold
 
@@ -1145,11 +1193,12 @@ bool TargaImage::Dither_Random()
     if (!ValidImage(*this)) return false;
     mt19937 randomEngine((random_device())());
     uniform_real_distribution<double> noise(-0.2, 0.2);
-    for (size_t p = 0; p < PixelCount(*this); ++p)
+    for (int p = 0; p < width * height; ++p)
     {
-        const double intensity = static_cast<unsigned char>(Luminance(data + p * 4)) / 255.0
-                                 + noise(randomEngine);
-        SetGray(data + p * 4, intensity >= 0.5 ? 255 : 0);
+        unsigned char* pixel = data + p * 4;
+        // Add a random value in [-0.2, 0.2], then threshold at 0.5.
+        const double intensity = GrayValue(pixel) / 255.0 + noise(randomEngine);
+        SetGray(pixel, intensity >= 0.5 ? 255 : 0);
     }
     return true;
 }// Dither_Random
@@ -1176,26 +1225,44 @@ bool TargaImage::Dither_FS()
 bool TargaImage::Dither_Bright()
 {
     if (!ValidImage(*this)) return false;
-    const size_t count = PixelCount(*this);
-    vector<double> intensities(count);
-    vector<size_t> order(count);
+    const int pixelCount = width * height;
+
+    // Count the pixels at each gray level, and the total brightness.
+    vector<int> levelCount(256, 0);
     double sum = 0.0;
-    for (size_t p = 0; p < count; ++p)
+    for (int p = 0; p < pixelCount; ++p)
     {
-        intensities[p] = static_cast<unsigned char>(Luminance(data + p * 4));
-        sum += intensities[p] / 255.0;
-        order[p] = p;
+        const unsigned char gray = GrayValue(data + p * 4);
+        ++levelCount[gray];
+        sum += gray / 255.0;
     }
-    const size_t whiteCount = Min(count, static_cast<size_t>(floor(sum + 0.5)));
-    // The threshold is the quantile that produces the desired white-pixel
-    // count, not the mean intensity. Break ties consistently at the threshold.
-    if (whiteCount > 0 && whiteCount < count)
-        nth_element(order.begin(), order.begin() + whiteCount, order.end(),
-            [&intensities](size_t a, size_t b) {
-                return intensities[a] != intensities[b] ? intensities[a] > intensities[b] : a < b;
-            });
-    for (size_t p = 0; p < count; ++p) SetGray(data + p * 4, 0);
-    for (size_t p = 0; p < whiteCount; ++p) SetGray(data + order[p] * 4, 255);
+
+    // To keep the average brightness, this many pixels must become white.
+    const int whiteCount = Min(pixelCount, static_cast<int>(floor(sum + 0.5)));
+
+    // Walk from the brightest level down until we have enough white pixels.
+    // Every pixel brighter than "threshold" is white. At the threshold level
+    // itself only "whiteAtThreshold" pixels (the first ones found) are white.
+    int threshold = 255, brighterCount = 0;
+    while (threshold > 0 && brighterCount + levelCount[threshold] < whiteCount)
+    {
+        brighterCount += levelCount[threshold];
+        --threshold;
+    }
+    int whiteAtThreshold = whiteCount - brighterCount;
+
+    for (int p = 0; p < pixelCount; ++p)
+    {
+        unsigned char* pixel = data + p * 4;
+        const int gray = GrayValue(pixel);
+        bool white = gray > threshold;
+        if (gray == threshold && whiteAtThreshold > 0)
+        {
+            white = true;
+            --whiteAtThreshold;
+        }
+        SetGray(pixel, white ? 255 : 0);
+    }
     return true;
 }// Dither_Bright
 
@@ -1217,10 +1284,10 @@ bool TargaImage::Dither_Cluster()
     for (int y = 0; y < height; ++y)
         for (int x = 0; x < width; ++x)
         {
-            unsigned char* pixel = data + (static_cast<size_t>(y) * width + x) * 4;
+            unsigned char* pixel = data + (y * width + x) * 4;
             // The PDF's I[x][y] / mask[x % 4][y % 4] indexes rows first, so the
             // first index is the row (y). This matches the reference program.
-            const double intensity = static_cast<unsigned char>(Luminance(pixel)) / 255.0;
+            const double intensity = GrayValue(pixel) / 255.0;
             SetGray(pixel, intensity >= mask[y % 4][x % 4] ? 255 : 0);
         }
     return true;
@@ -1425,10 +1492,12 @@ bool TargaImage::NPR_Paint()
 
     // Simplified circular-stroke algorithm from Hertzmann, SIGGRAPH 1998,
     // section 2.1: https://mrl.cs.nyu.edu/publications/painterly98/
+    const int pixelCount = width * height;
+
+    // Paint on an opaque copy; remember the alpha to restore it at the end.
     TargaImage source(*this);
-    const size_t count = PixelCount(*this);
-    vector<unsigned char> alpha(count);
-    for (size_t p = 0; p < count; ++p)
+    vector<unsigned char> alpha(pixelCount);
+    for (int p = 0; p < pixelCount; ++p)
     {
         alpha[p] = data[p * 4 + 3];
         unsigned char rgb[3];
@@ -1436,55 +1505,41 @@ bool TargaImage::NPR_Paint()
         for (int c = 0; c < 3; ++c) source.data[p * 4 + c] = rgb[c];
         source.data[p * 4 + 3] = 255;
     }
-    ClearToBlack();
-    const int radii[3] = { 7, 3, 1 };
-    const double threshold = 25.0;
+    ClearToBlack();   // "this" is now the canvas
+
+    const int radii[3] = { 7, 3, 1 };      // brush sizes, largest first
+    const double threshold = 25.0;         // T in the paper
     mt19937 randomEngine((random_device())());
-    vector<double> difference(count);
+    vector<double> difference(pixelCount);
 
     for (int layer = 0; layer < 3; ++layer)
     {
         const int radius = radii[layer];
-        const int grid = radius; // fg = 1
+        const int grid = radius;           // fg = 1
+
+        // Reference image: the source blurred with a (2r+1) x (2r+1) Gaussian.
         TargaImage reference(source);
         reference.Filter_Gaussian_N(2 * radius + 1);
-        for (size_t p = 0; p < count; ++p)
-        {
-            double squaredDistance = 0.0;
-            for (int c = 0; c < 3; ++c)
-            {
-                const double delta = data[p * 4 + c] - reference.data[p * 4 + c];
-                squaredDistance += delta * delta;
-            }
-            // An unpainted canvas must receive strokes even in dark regions.
-            difference[p] = layer == 0 ? 1e6 : sqrt(squaredDistance);
-        }
 
+        // Color distance between the canvas and the reference at every pixel.
+        // An unpainted canvas must receive strokes even in dark regions.
+        for (int p = 0; p < pixelCount; ++p)
+            difference[p] = layer == 0 ? 1e6
+                : ColorDistance(data + p * 4, reference.data + p * 4);
+
+        // One possible stroke per grid cell, at the pixel with the largest error.
         vector<Stroke> strokes;
         for (int y = 0; y < height; y += grid)
             for (int x = 0; x < width; x += grid)
             {
-                double areaError = 0.0;
-                int samples = 0, bestX = x, bestY = y;
-                double largestError = difference[static_cast<size_t>(y) * width + x];
-                for (int sy = Max(0, y - grid / 2); sy <= Min(height - 1, y + grid / 2); ++sy)
-                    for (int sx = Max(0, x - grid / 2); sx <= Min(width - 1, x + grid / 2); ++sx)
-                    {
-                        const double error = difference[static_cast<size_t>(sy) * width + sx];
-                        areaError += error;
-                        ++samples;
-                        if (error > largestError)
-                        {
-                            largestError = error;
-                            bestX = sx;
-                            bestY = sy;
-                        }
-                    }
-                if (areaError / samples > threshold)
+                int bestX, bestY;
+                const double areaError =
+                    GridCellError(difference, width, height, x, y, grid / 2, bestX, bestY);
+                if (areaError > threshold)
                 {
-                    const size_t i = (static_cast<size_t>(bestY) * width + bestX) * 4;
+                    const unsigned char* color = reference.data + (bestY * width + bestX) * 4;
                     strokes.push_back(Stroke(radius, bestX, bestY,
-                        reference.data[i], reference.data[i + 1], reference.data[i + 2], 255));
+                                             color[0], color[1], color[2], 255));
                 }
             }
 
@@ -1492,10 +1547,11 @@ bool TargaImage::NPR_Paint()
         shuffle(strokes.begin(), strokes.end(), randomEngine);
         for (size_t i = 0; i < strokes.size(); ++i) Paint_Stroke(strokes[i]);
 
+        // After the first layer, fill any spot the circles did not fully cover
+        // (image borders, antialiased rims) with the reference color.
         if (layer == 0)
-            for (size_t p = 0; p < count; ++p)
+            for (int p = 0; p < pixelCount; ++p)
             {
-                // Complete coverage at clipped border cells and antialiased rims.
                 const double uncovered = 1.0 - data[p * 4 + 3] / 255.0;
                 for (int c = 0; c < 3; ++c)
                     data[p * 4 + c] = ClampByte(data[p * 4 + c] +
@@ -1505,7 +1561,7 @@ bool TargaImage::NPR_Paint()
     }
 
     // Restore the original transparency, with premultiplied color values.
-    for (size_t p = 0; p < count; ++p)
+    for (int p = 0; p < pixelCount; ++p)
     {
         for (int c = 0; c < 3; ++c)
             data[p * 4 + c] = ClampByte(data[p * 4 + c] * (alpha[p] / 255.0));
@@ -1954,26 +2010,11 @@ void TargaImage::RGBA_To_RGB(unsigned char *rgba, unsigned char *rgb)
 TargaImage* TargaImage::Reverse_Rows(void)
 {
     if (!ValidImage(*this)) return NULL;
-    unsigned char   *dest = new unsigned char[width * height * 4];
-    TargaImage	    *result;
-    int 	        i, j;
-
-    for (i = 0 ; i < height ; i++)
-    {
-	    int in_offset = (height - i - 1) * width * 4;
-	    int out_offset = i * width * 4;
-
-	    for (j = 0 ; j < width ; j++)
-        {
-	        dest[out_offset + j * 4] = data[in_offset + j * 4];
-	        dest[out_offset + j * 4 + 1] = data[in_offset + j * 4 + 1];
-	        dest[out_offset + j * 4 + 2] = data[in_offset + j * 4 + 2];
-	        dest[out_offset + j * 4 + 3] = data[in_offset + j * 4 + 3];
-        }
-    }
-
-    result = new TargaImage(width, height, dest);
-    delete[] dest;
+    TargaImage* result = new TargaImage(width, height);
+    const int rowBytes = width * 4;
+    // Row i of the result is row (height - 1 - i) of this image.
+    for (int i = 0; i < height; i++)
+        memcpy(result->data + i * rowBytes, data + (height - 1 - i) * rowBytes, rowBytes);
     return result;
 }// Reverse_Rows
 
@@ -1996,29 +2037,29 @@ void TargaImage::ClearToBlack()
 //
 ///////////////////////////////////////////////////////////////////////////////
 void TargaImage::Paint_Stroke(const Stroke& s) {
-   int radius_squared = (int)s.radius * (int)s.radius;
-   for (int x_off = -((int)s.radius); x_off <= (int)s.radius; x_off++) {
-      for (int y_off = -((int)s.radius); y_off <= (int)s.radius; y_off++) {
-         int x_loc = (int)s.x + x_off;
-         int y_loc = (int)s.y + y_off;
-         // are we inside the circle, and inside the image?
-         if ((x_loc >= 0 && x_loc < width && y_loc >= 0 && y_loc < height)) {
-            int dist_squared = x_off * x_off + y_off * y_off;
-            if (dist_squared <= radius_squared) {
-               data[(y_loc * width + x_loc) * 4 + 0] = s.r;
-               data[(y_loc * width + x_loc) * 4 + 1] = s.g;
-               data[(y_loc * width + x_loc) * 4 + 2] = s.b;
-               data[(y_loc * width + x_loc) * 4 + 3] = s.a;
-            } else if (dist_squared == radius_squared + 1) {
-               data[(y_loc * width + x_loc) * 4 + 0] = 
-                  (data[(y_loc * width + x_loc) * 4 + 0] + s.r) / 2;
-               data[(y_loc * width + x_loc) * 4 + 1] = 
-                  (data[(y_loc * width + x_loc) * 4 + 1] + s.g) / 2;
-               data[(y_loc * width + x_loc) * 4 + 2] = 
-                  (data[(y_loc * width + x_loc) * 4 + 2] + s.b) / 2;
-               data[(y_loc * width + x_loc) * 4 + 3] = 
-                  (data[(y_loc * width + x_loc) * 4 + 3] + s.a) / 2;
-            }
+   const int radius = (int)s.radius;
+   const int radius_squared = radius * radius;
+   for (int x_off = -radius; x_off <= radius; x_off++) {
+      for (int y_off = -radius; y_off <= radius; y_off++) {
+         const int x_loc = (int)s.x + x_off;
+         const int y_loc = (int)s.y + y_off;
+         // skip pixels outside the image
+         if (x_loc < 0 || x_loc >= width || y_loc < 0 || y_loc >= height)
+            continue;
+         unsigned char* pixel = data + (y_loc * width + x_loc) * 4;
+         const int dist_squared = x_off * x_off + y_off * y_off;
+         if (dist_squared <= radius_squared) {
+            // inside the circle: use the stroke color
+            pixel[0] = s.r;
+            pixel[1] = s.g;
+            pixel[2] = s.b;
+            pixel[3] = s.a;
+         } else if (dist_squared == radius_squared + 1) {
+            // just on the edge: average with the canvas (simple antialiasing)
+            pixel[0] = (pixel[0] + s.r) / 2;
+            pixel[1] = (pixel[1] + s.g) / 2;
+            pixel[2] = (pixel[2] + s.b) / 2;
+            pixel[3] = (pixel[3] + s.a) / 2;
          }
       }
    }
