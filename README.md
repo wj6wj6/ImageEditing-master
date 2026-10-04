@@ -85,6 +85,16 @@ This builds Release x64 in `build-portable` and creates
 runtime DLLs, the `Images` directory, an empty `Output` directory, an optional launcher,
 and demo instructions. Rebuild the ZIP after changing source code or images.
 
+To refresh the repository's `portable` folder from the new ZIP, close
+`ImageEditing.exe` and run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Update-Portable.ps1
+```
+
+It unzips `dist/P1-Demo-Windows-x64.zip` and replaces the whole `portable` folder
+(so `portable/Output` becomes empty). Pass `-Archive <path>` to use another ZIP.
+
 On the demo computer, extract the whole ZIP into a writable directory and open
 `ImageEditing.exe`. In GUI mode, the portable executable automatically uses
 its own folder as the working directory, including when started from a shortcut
