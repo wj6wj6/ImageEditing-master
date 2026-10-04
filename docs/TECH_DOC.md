@@ -44,9 +44,7 @@ flowchart TD
 | [ImageWidget.cpp](../src/ImageWidget.cpp) | 保存 `m_pImage`；`CommandCallback()` 接收指令，`Redraw()` 調整視窗，`draw()` 顯示影像 |
 | [ScriptHandler.cpp](../src/ScriptHandler.cpp) | 指令名稱與 enum 對應；`HandleCommand()` 分派，`HandleScriptFile()` 逐行執行 |
 | [TargaImage.h](../src/TargaImage.h) | 影像類別、公開欄位、影像操作介面與 `Stroke` 宣告 |
-| [TargaImage.cpp](../src/TargaImage.cpp) | 格式轉換、基本影像演算法（含基本 `npr-paint`） |
-| [TargaImageNPR.cpp](../src/TargaImageNPR.cpp) | 進階 NPR：`npr-paint-advanced`、`npr-cartoon`、`npr-watercolor` |
-| [ImageUtils.h](../src/ImageUtils.h) | 兩個檔案共用的小工具（`ValidImage`、`ClampByte`、`Reflect` 等） |
+| [TargaImage.cpp](../src/TargaImage.cpp) | 格式轉換、影像演算法、NPR 與內部共用工具 |
 | [libtarga.c](../src/libtarga.c) | TGA 解碼、編碼及其預乘 Alpha 轉換 |
 | [CMakeLists.txt](../CMakeLists.txt) | 主程式、LibTarga、FLTK 連結與可選的 portable 封裝 |
 | [tests/CMakeLists.txt](../tests/CMakeLists.txt) | 獨立建立 `npr_tests`，以 CTest 註冊 `advanced_npr` |
@@ -386,7 +384,7 @@ cmake --build build-tests --config Debug --target npr_tests
 ctest --test-dir build-tests -C Debug --output-on-failure
 ```
 
-此 target 直接編譯 `TargaImage.cpp`、`TargaImageNPR.cpp`、`ScriptHandler.cpp` 與 `libtarga.c`。測例涵蓋三種進階風格、種子重現性、倍率效果、尺寸與 Alpha、透明邊界、微小圖、卡通色階／色彩邊界、錯誤參數和指令分派。它不代表 GUI 操作或所有基本演算法均已驗證。
+此 target 直接編譯 `TargaImage.cpp`、`ScriptHandler.cpp` 與 `libtarga.c`。測例涵蓋三種進階風格、種子重現性、倍率效果、尺寸與 Alpha、透明邊界、微小圖、卡通色階／色彩邊界、錯誤參數和指令分派。它不代表 GUI 操作或所有基本演算法均已驗證。
 
 圖檔格式整合測試使用 Python 與 Pillow，透過實際 EXE 的 headless 指令處理圖片：
 

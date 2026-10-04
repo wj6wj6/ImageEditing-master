@@ -6,7 +6,7 @@
 
 ## 程式結構與基本功能
 
-`ScriptHandler.cpp` 將指令名稱對應到 `TargaImage` 方法；`TargaImage.cpp` 負責像素演算法（三種進階 NPR 在 `TargaImageNPR.cpp`），`TargaImage.h` 宣告介面。FLTK 負責視窗及顯示。內部像素採 8-bit 預乘 RGBA，索引為 `(y * width + x) * 4`。
+`ScriptHandler.cpp` 將指令名稱對應到 `TargaImage` 方法；`TargaImage.cpp` 負責像素演算法，`TargaImage.h` 宣告介面。FLTK 負責視窗及顯示。內部像素採 8-bit 預乘 RGBA，索引為 `(y * width + x) * 4`。
 
 | 功能 | 實作概要 |
 | --- | --- |
