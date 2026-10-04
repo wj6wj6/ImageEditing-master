@@ -108,7 +108,7 @@ GUI 可輸入 `run Demo/gray.txt`。Portable GUI 會使用執行檔所在目錄�
 
 ## 1. ToGray：將彩色轉為灰階
 
-**指令：** `gray`。入口：[To_Grayscale()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1000>)。
+**指令：** `gray`。入口：[To_Grayscale()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1110>)。
 
 ### 實作流程
 
@@ -135,7 +135,7 @@ data[i] = data[i + 1] = data[i + 2] = gray;
 
 ## 2. Uniform：固定色盤量化
 
-**指令：** `quant-unif`。入口：[Quant_Uniform()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1029>)。
+**指令：** `quant-unif`。入口：[Quant_Uniform()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1133>)。
 
 ### 實作流程與色盤
 
@@ -172,7 +172,7 @@ B' = round(bLevel × 255 / 3)
 
 ## 3. Populosity：依原圖熱門顏色建立色盤
 
-**指令：** `quant-pop`。入口：[Quant_Populosity()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1059>)。
+**指令：** `quant-pop`。入口：[Quant_Populosity()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1157>)。
 
 ### 步驟一：先建立 32³ 色格直方圖
 
@@ -212,7 +212,7 @@ Alpha 沿用原值。令 P 為像素數、U 為不同原色數、K≤256 為色�
 
 ## 4. Naive：固定門檻黑白化
 
-**指令：** `dither-thresh`。入口：[Dither_Threshold()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1128>)。
+**指令：** `dither-thresh`。入口：[Dither_Threshold()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1205>)。
 
 先計算亮度並轉成 byte，再以 128 為門檻：
 
@@ -233,7 +233,7 @@ output = L >= 128 ? 255 : 0
 
 ## 5. Brightness：以白像素數維持全圖平均亮度
 
-**指令：** `dither-bright`。入口：[Dither_Bright()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1176>)。
+**指令：** `dither-bright`。入口：[Dither_Bright()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1223>)。
 
 ### 決定白像素數
 
@@ -261,7 +261,7 @@ K 是要畫成白色的像素數。因為一個白像素貢獻 255、黑像素�
 
 ## 6. Random：在亮度加入隨機擾動
 
-**指令：** `dither-rand`。入口：[Dither_Random()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1143>)。
+**指令：** `dither-rand`。入口：[Dither_Random()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1273>)。
 
 程式使用 `random_device` 初始化 `mt19937`，對每個像素產生均勻亂數 n，範圍為 `[-0.2,0.2)`：
 
@@ -284,7 +284,7 @@ output = (v + n >= 0.5) ? 255 : 0
 
 ## 7. Cluster：重複使用群聚閾值矩陣
 
-**指令：** `dither-cluster`。入口：[Dither_Cluster()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1208>)。
+**指令：** `dither-cluster`。入口：[Dither_Cluster()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1294>)。
 
 程式使用下列 4×4 閾值：
 
@@ -327,7 +327,7 @@ SetGray(pixel,
 
 ## 8. Floyd：蛇形 Floyd–Steinberg 誤差擴散
 
-**指令：** `dither-fs`。入口：`Dither_FS()`，主要實作在 [FloydSteinberg()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:647>)。
+**指令：** `dither-fs`。入口：`Dither_FS()`，主要實作在 [FloydSteinberg()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:177>)。
 
 ### 工作陣列與掃描方向
 
@@ -367,7 +367,7 @@ P 是目前像素。精確座標為：右方 `(x+1,y)` 得 7/16；左下 `(x-1,y
 
 ## 9. Color Floyd：對 RGB 分別擴散量化誤差
 
-**指令：** `dither-color`。入口：[Dither_Color()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1237>)，呼叫 `FloydSteinberg(*this, true)`。
+**指令：** `dither-color`。入口：[Dither_Color()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1335>)，呼叫 `FloydSteinberg(*this, true)`。
 
 彩色版本建立三通道 double 工作陣列。每個位置的 R、G、B 分別量化到固定通道色階，再將各自的誤差以相同 7/16、3/16、5/16、1/16 權重傳出去。紅色誤差只影響鄰居的紅色通道，其餘相同。
 
@@ -387,7 +387,7 @@ Alpha 保持原值；基本版本沒有進一步限制量化後 RGB 必須小於
 
 ## 10. Box：5×5 方框平均
 
-**指令：** `filter-box`。入口：[Filter_Box()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1343>)。
+**指令：** `filter-box`。入口：[Filter_Box()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1350>)。
 
 ```cpp
 return FilterRGB(*this, vector<double>(5, 1.0 / 5.0));
@@ -397,7 +397,7 @@ return FilterRGB(*this, vector<double>(5, 1.0 / 5.0));
 
 ### 六種基本濾波共用的 FilterRGB
 
-[FilterRGB()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:133>) 的流程：
+[FilterRGB()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:246>) 的流程：
 
 1. 驗證影像與奇數長度核。
 2. 建立 `P×3` 個 double 的水平暫存陣列。
@@ -417,7 +417,7 @@ return FilterRGB(*this, vector<double>(5, 1.0 / 5.0));
 
 ## 11. Barlette／Bartlett：三角形加權平滑
 
-**指令：** `filter-bartlett`。入口：[Filter_Bartlett()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1355>)。評分表的 Barlette 對應程式的 Bartlett。
+**指令：** `filter-bartlett`。入口：[Filter_Bartlett()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1362>)。評分表的 Barlette 對應程式的 Bartlett。
 
 一維核為：
 
@@ -445,7 +445,7 @@ k = [1,2,3,2,1] / 9
 
 ## 12. Gaussian：五點二項式 Gaussian 近似
 
-**指令：** `filter-gauss`。入口：[Filter_Gaussian()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1368>)，實際呼叫 `Filter_Gaussian_N(5)`。
+**指令：** `filter-gauss`。入口：[Filter_Gaussian()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1375>)，實際呼叫 `Filter_Gaussian_N(5)`。
 
 一維核為：
 
@@ -473,7 +473,7 @@ k = [1,4,6,4,1] / 16
 
 ## 13. Ab G：任意正奇數大小的 Gaussian 核
 
-**指令：** `filter-gauss-n 9`。入口：[Filter_Gaussian_N()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1380>)，核生成在 [GaussianKernel()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:116>)。
+**指令：** `filter-gauss-n 9`。入口：[Filter_Gaussian_N()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1388>)，核生成在 [GaussianKernel()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:225>)。
 
 ### 參數與核生成
 
@@ -507,7 +507,7 @@ N 是核的邊長。每個輸出點的有效鄰域擴大後，平滑影響範圍
 
 ## 14. Edge Detect：原圖減去模糊圖
 
-**指令：** `filter-edge`。入口：[Filter_Edge()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1394>)。
+**指令：** `filter-edge`。入口：[Filter_Edge()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1402>)。
 
 ```cpp
 return FilterRGB(*this, GaussianKernel(5), HIGH_PASS);
@@ -531,7 +531,7 @@ E = clamp(I - B, 0, 255)
 
 ## 15. Edge Enhance：把高頻細節加回原圖
 
-**指令：** `filter-enhance`。入口：[Filter_Enhance()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1407>)。
+**指令：** `filter-enhance`。入口：[Filter_Enhance()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1415>)。
 
 ```cpp
 return FilterRGB(*this, GaussianKernel(5), SHARPEN);
@@ -560,7 +560,7 @@ output = clamp(2I - B, 0, 255)
 
 ## 16. Half Size：縮小為一半
 
-**指令：** `half`。入口：[Half_Size()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1829>)，呼叫 `Resize(0.5f)`。
+**指令：** `half`。入口：[Half_Size()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1431>)，呼叫 `Resize(0.5f)`。
 
 ### 尺寸與反向座標
 
@@ -575,7 +575,7 @@ sourceY = outputY / 0.5 = 2×outputY
 
 ### 幾何操作共用的 SampleBartlett
 
-[SampleBartlett()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:692>) 針對來源浮點座標 `(sx,sy)`，從 `floor(sx)-1`、`floor(sy)-1` 起查看 4×4 個候選像素。
+[SampleBartlett()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:294>) 針對來源浮點座標 `(sx,sy)`，從 `floor(sx)-1`、`floor(sy)-1` 起查看 4×4 個候選像素。
 
 每一軸的未正規化權重為：
 
@@ -603,7 +603,7 @@ Half 的來源座標都是整數，每軸有效權重為 `[1,2,1]/4`，二維相
 
 ## 17. Double Size：放大為兩倍
 
-**指令：** `double`。入口：[Double_Size()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1840>)，呼叫 `Resize(2.0f)`。
+**指令：** `double`。入口：[Double_Size()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1442>)，呼叫 `Resize(2.0f)`。
 
 輸出座標 `(x,y)` 對應來源 `(x/2,y/2)`。593×464 會變成 1186×928，像素數是原本四倍。
 
@@ -635,7 +635,7 @@ Half 的來源座標都是整數，每軸有效權重為 `[1,2,1]/4`，二維相
 
 ## 18. Arbitrary Size：任意倍率縮放
 
-**指令：** `scale 0.75`。入口：[Resize()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1852>)。
+**指令：** `scale 0.75`。入口：[Resize()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1454>)。
 
 函式拒絕非有限值、0 與負倍率。計算新尺寸後，也檢查維度與像素數是否超出既有索引可容納的範圍。
 
@@ -679,7 +679,7 @@ source = (x / scale, y / scale)
 
 ## 19. Arbitrary Rotate：以中心順時針旋轉
 
-**指令：** `rotate 30`。入口：[Rotate()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1885>)。
+**指令：** `rotate 30`。入口：[Rotate()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1487>)。
 
 ### 中心、角度與反向映射
 
@@ -726,7 +726,7 @@ sy = -sin(angle) × dx + cos(angle) × dy + cy
 
 Basic NPR（20 分）把原圖重新畫成大小不同的圓形筆觸。核心是「先鋪大色塊，再以小筆觸修補誤差較大的位置」。原始碼註解標示這是 Hertzmann 1998 年繪畫方法第 2.1 節的簡化圓形筆觸版本。
 
-主函式是 [NPR_Paint()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1422>)；指令在 [ScriptHandler.cpp](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/ScriptHandler.cpp:274>) 分派。
+主函式是 [NPR_Paint()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1524>)；指令在 [ScriptHandler.cpp](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/ScriptHandler.cpp:274>) 分派。
 
 ```text
 load Images/wiz.tga
@@ -822,7 +822,7 @@ for (size_t i = 0; i < strokes.size(); ++i)
 
 這表示本層的誤差與落筆位置都根據落筆前的畫布決定，不會畫一筆就重算整張誤差。隨機引擎以 `random_device` 初始化，所以重新載入同一原圖再執行，重疊順序可能不同。
 
-[Paint_Stroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1998>) 在中心附近的正方形範圍內檢查距離平方：
+[Paint_Stroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:2090>) 在中心附近的正方形範圍內檢查距離平方：
 
 $$
 d^2=\Delta x^2+\Delta y^2
@@ -876,7 +876,7 @@ Basic 版本會先把工作來源改成不透明，參考圖也沒有依原始 A
 
 油畫、卡通與水彩共同對應評分表的 Advance NPR（10–50 分）項目，不是三個各自累加的 10–50 分。油畫在 Basic 的多尺度架構上加入沿輪廓延伸的曲線筆觸、粗細變化、半透明疊色與刷毛紋理。
 
-入口：[NPR_Paint_Advanced()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1526>)。
+入口：[NPR_Paint_Advanced()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1616>)。
 
 ```text
 load Images/wiz.tga
@@ -906,7 +906,7 @@ $$
 
 ### 21.3 Alpha 正規化的 Gaussian 參考圖
 
-[PaintReference()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:194>) 設定 `sigma=max(0.5,radius/2)`、半寬 `ceil(3*sigma)`，以 `exp(-k²/(2*sigma²))` 建立正規化的一維 Gaussian 核。水平與垂直分開處理，邊界透過 `Reflect()` 鏡射。
+[PaintReference()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:409>) 設定 `sigma=max(0.5,radius/2)`、半寬 `ceil(3*sigma)`，以 `exp(-k²/(2*sigma²))` 建立正規化的一維 Gaussian 核。水平與垂直分開處理，邊界透過 `Reflect()` 鏡射。
 
 它同時模糊**預乘 RGB 和 Alpha**，再還原參考顏色：
 
@@ -934,18 +934,18 @@ $$
 
 ### 21.5 沿亮度等高線雙向追蹤
 
-[PaintGradient()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:238>) 先計算 `L=0.299R+0.587G+0.114B`，再用 Sobel 核除以 8 取得 `(Gx,Gy)`：
+[PaintGradient()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:453>) 先計算 `L=0.299R+0.587G+0.114B`，再用 Sobel 核除以 8 取得 `(Gx,Gy)`：
 
 ```text
 Gx = [-1  0  1; -2  0  2; -1  0  1] / 8
 Gy = [-1 -2 -1;  0  0  0;  1  2  1] / 8
 ```
 
-[TracePaintStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:286>) 取垂直於梯度的方向 `(-Gy,Gx)`，讓筆觸沿著近似相同亮度的輪廓延伸。
+[TracePaintStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:500>) 取垂直於梯度的方向 `(-Gy,Gx)`，讓筆觸沿著近似相同亮度的輪廓延伸。
 
 例如梯度 `(3,4)`，垂直方向 `(-4,3)`，正規化後為 `(-0.8,0.6)`。半徑 4 時，一步位移 `(-3.2,2.4)`，所以 `(50,50)` 的下一點可為 `(46.8,52.4)`。另一側沿相反方向延伸。
 
-每側最多七步，每步距離等於半徑；加上起點，最多 15 個控制點。小數位置的梯度由 [SamplePaintGradient()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:263>) 做雙線性內插。
+每側最多七步，每步距離等於半徑；加上起點，最多 15 個控制點。小數位置的梯度由 [SamplePaintGradient()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:477>) 做雙線性內插。
 
 為避免方向折返，若新舊方向內積小於零便把新方向反轉，再混合 `65% 新方向 + 35% 舊方向` 並正規化。梯度太弱時沿用前一方向；起步的平坦區域使用帶種子控制的預設方向。
 
@@ -960,7 +960,7 @@ strokeError > 85.0 * 85.0 ||
 
 ### 21.6 B-spline、筆形與刷毛
 
-[PaintSpline()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:360>) 以均勻三次 B-spline 平滑控制點。每四個點使用以下權重：
+[PaintSpline()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:574>) 以均勻三次 B-spline 平滑控制點。每四個點使用以下權重：
 
 $$
 P(t)=\frac{(1-t)^3P_0+(4-6t^2+3t^3)P_1+(1+3t+3t^2-3t^3)P_2+t^3P_3}{6}
@@ -968,7 +968,7 @@ $$
 
 程式取 `t=0,0.25,0.5,0.75`，重複端點讓曲線到達筆觸兩端。若只有一個控制點，繪製時退化成圓形足跡。
 
-[DrawPaintStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:382>) 沿曲線小線段繪製；局部半徑為：
+[DrawPaintStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:596>) 沿曲線小線段繪製；局部半徑為：
 
 $$
 r(p)=r_0(0.65+0.35\sin(\pi p))
@@ -1020,7 +1020,7 @@ $$
 
 ### 22.1 目的與指令
 
-卡通效果把連續顏色整理成分階色塊，再加上深色輪廓。入口是 [NPR_Cartoon()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1619>)。
+卡通效果把連續顏色整理成分階色塊，再加上深色輪廓。入口是 [NPR_Cartoon()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1709>)。
 
 ```text
 load Images/wiz.tga
@@ -1032,7 +1032,7 @@ save Output/cartoon.png
 
 ### 22.2 三次雙邊濾波：平滑相近顏色、保留明顯邊界
 
-[BilateralPaint()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:468>) 先將預乘 RGB 還原為浮點顏色，半徑取 `clamp(int(2+strength),2,5)`。預設半徑 3，每輪查看 7 × 7 鄰域，共執行三輪。
+[BilateralPaint()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:682>) 先將預乘 RGB 還原為浮點顏色，半徑取 `clamp(int(2+strength),2,5)`。預設半徑 3，每輪查看 7 × 7 鄰域，共執行三輪。
 
 中心 `p` 與鄰居 `q` 的權重同時考慮距離、色差與原圖 Alpha：
 
@@ -1051,7 +1051,7 @@ RGB 每通道差 10 時，顏色權重約 `exp(-300/9600)=0.969`；每通道差 
 
 ### 22.3 在 HSV 空間整理色塊
 
-[CelPaintColor()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:525>) 將平滑後 RGB 轉成 HSV，分別量化：
+[CelPaintColor()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:739>) 將平滑後 RGB 轉成 HSV，分別量化：
 
 | 分量 | 處理 |
 |---|---|
@@ -1144,7 +1144,7 @@ $$
 
 水彩用柔和曲線薄塗、局部擴散、沉積邊與紙張顆粒，近似水彩外觀。它是程序化外觀模型，沒有求解真正的流體、水分蒸發或顏料運輸方程。
 
-入口：[NPR_Watercolor()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1689>)。
+入口：[NPR_Watercolor()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1779>)。
 
 ```text
 load Images/wiz.tga
@@ -1162,7 +1162,7 @@ $$
 
 ### 23.2 先建立濕度與顆粒控制圖
 
-[PaintNoise()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:450>) 根據座標與種子計算 0～1 的數值；[PaintValueNoise()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:459>) 對四個鄰接噪聲點以平滑權重內插。
+[PaintNoise()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:664>) 根據座標與種子計算 0～1 的數值；[PaintValueNoise()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:673>) 對四個鄰接噪聲點以平滑權重內插。
 
 ```text
 wetness     = 0.65 * 大範圍平滑噪聲 + 0.35 * 小範圍平滑噪聲
@@ -1175,7 +1175,7 @@ granulation = 0.60 * 逐像素噪聲     + 0.40 * 小範圍平滑噪聲
 
 ### 23.3 相對紙張的顏料密度
 
-[WaterPigment()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:561>) 使用紙色 `P=(244,237,219)`。先把參考色混入紙色，再對暗部加入 `(-3,1,6)` 的冷色調整：
+[WaterPigment()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:775>) 使用紙色 `P=(244,237,219)`。先把參考色混入紙色，再對暗部加入 `(-3,1,6)` 的冷色調整：
 
 $$
 C=0.86C_{source}+0.14P+(-3,1,6)shadow
@@ -1199,7 +1199,7 @@ $$
 
 筆觸沿用油畫的 `TracePaintStroke()` 與 B-spline：雙向追蹤、色差停止條件、平坦區域方向及顏色小幅擾動都保留。第一層筆觸不透明度改成 0.50，後兩層為 0.42。
 
-所有筆觸先規劃，再打亂順序，交給 [DrawWatercolorStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:573>) 更新密度。
+所有筆觸先規劃，再打亂順序，交給 [DrawWatercolorStroke()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:787>) 更新密度。
 
 ### 23.5 濕度影響擴散寬度
 
@@ -1289,13 +1289,13 @@ $$
 
 ## 24. Other：PNG／JPEG 圖檔讀寫
 
-**指令：** `load photo.png`、`save result.jpg`。入口：[Load_Image()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:928>) 與 [Save_Image()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:861>)。
+**指令：** `load photo.png`、`save result.jpg`。入口：[Load_Image()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1034>) 與 [Save_Image()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:967>)。
 
 這個擴充讓同一套影像處理指令接收 PNG、JPEG、TGA，並依輸出副檔名選擇格式。PNG／JPEG 由專案內附的 stb 編解碼器處理，TGA 保留 LibTarga 路徑。評分表的 Other 沒有再細分格式配分，因此只能說這是 Other 的展示功能，不能保證固定加分。
 
 ### 24.1 先判斷格式，再交給對應編解碼器
 
-[FormatFromFilename()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:58>) 取最後一段檔名的副檔名並轉成小寫：
+[FormatFromFilename()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:112>) 取最後一段檔名的副檔名並轉成小寫：
 
 | 檔名例子 | 分派結果 |
 | --- | --- |
@@ -1395,7 +1395,7 @@ PNG 與 JPEG 都先建立新的輸出陣列，**不會為了儲存而改寫目�
 
 ### 24.5 TGA 為什麼還需要 Reverse_Rows？
 
-TGA 使用原本的 `tga_load()`、`tga_write_raw()`。LibTarga 路徑的資料列方向與程式內部不同，因此讀入後與寫出前都會呼叫 [Reverse_Rows()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1954>)：
+TGA 使用原本的 `tga_load()`、`tga_write_raw()`。LibTarga 路徑的資料列方向與程式內部不同，因此讀入後與寫出前都會呼叫 [Reverse_Rows()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:2061>)：
 
 ```text
 newRow[y] = oldRow[height - y - 1]
@@ -1455,13 +1455,13 @@ Cstored = C × a
 | JPEG 儲存 | 使用 `Cstored + (255 - A)` 合成白底，再以固定 quality 90 編碼 |
 | TGA 儲存 | 先反轉列順序，LibTarga 再反預乘並編碼 |
 
-來源：[Load_Image／Save_Image](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:861>)、[RGBA_To_RGB](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1916>)。PNG／JPEG 與內部影像都是由上往下排列，不需額外反轉列。GUI 顯示的半透明顏色和 JPEG 白底結果可能不同。
+來源：[Load_Image／Save_Image](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:967>)、[RGBA_To_RGB](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:2023>)。PNG／JPEG 與內部影像都是由上往下排列，不需額外反轉列。GUI 顯示的半透明顏色和 JPEG 白底結果可能不同。
 
 8-bit 預乘與反預乘會造成捨入誤差，半透明 RGB 不保證往返完全相同；完全透明像素原本藏著的 RGB 也無法還原。TGA 與 PNG 採用的捨入細節不同，跨格式更不能要求所有半透明 RGB 位元組完全一致。
 
 ### A.2 五種 Porter–Duff 合成共用一個實作
 
-[Composite()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:715>) 接收前景、背景及模式。前景是目前載入的影像，背景是指令另外指定的影像。兩張圖必須有效且寬高相同；條件不符會在修改前回傳 `false`。
+[Composite()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:317>) 接收前景、背景及模式。前景是目前載入的影像，背景是指令另外指定的影像。兩張圖必須有效且寬高相同；條件不符會在修改前回傳 `false`。
 
 使用目前圖 F 的透明度 `a` 與另一張圖 B 的透明度 `b`，四個通道都套用同一組係數：
 
@@ -1517,7 +1517,7 @@ Alpha 為：
 
 ### A.4 Difference 比較的是反預乘後的顏色
 
-[Difference()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1309>) 對應 `diff`。兩張圖同樣必須有效、尺寸相同。每個像素先分別執行 `RGBA_To_RGB()`，再計算：
+[Difference()](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1984>) 對應 `diff`。兩張圖同樣必須有效、尺寸相同。每個像素先分別執行 `RGBA_To_RGB()`，再計算：
 
 ```text
 Rout = abs(R1 - R2)
@@ -1595,7 +1595,7 @@ python 'E:/Development/NTUST-Computer graphics projects/P1/tmp/p1-validation/val
 
 ### B.5 Cluster 的現行程式與舊測試不一致
 
-目前[實作第 1224 行](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1224>)採用：
+目前[實作第 1310 行](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/TargaImage.cpp:1310>)採用：
 
 ```cpp
 mask[y % 4][x % 4]
@@ -1633,7 +1633,7 @@ mask[y % 4][x % 4]
 | 記憶體 | 原圖約 4WH bytes，顯示額外配置 3WH bytes；NPR 及濾波還有暫存陣列。部分尺寸檢查不代表所有建構及配置失敗都有保護 |
 | 編輯模型 | 操作直接更新目前圖片；沒有 Undo／Redo，比較不同效果前應重新載入原圖 |
 
-來源：[HandleCommand](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/ScriptHandler.cpp:108>)、[HandleScriptFile](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/ScriptHandler.cpp:499>)、[main](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/Main.cpp:105>)。這些限制是目前狀態說明，本次文件工作沒有修正相關程式。
+來源：[HandleCommand](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/ScriptHandler.cpp:108>)、[HandleScriptFile](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/ScriptHandler.cpp:422>)、[main](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/src/Main.cpp:105>)。這些限制是目前狀態說明，本次文件工作沒有修正相關程式。
 
 <a id="demo-checklist"></a>
 

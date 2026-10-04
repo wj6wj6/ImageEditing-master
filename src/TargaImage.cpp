@@ -50,36 +50,24 @@ const int           GREEN           = 1;                // green channel
 const int           BLUE            = 2;                // blue channel
 const unsigned char BACKGROUND[3]   = { 0, 0, 0 };      // background color
 
+// ---------------------------------------------------------------------------
+//  Helpers, part 1: small tools used by the basic operations
+//  (pixels, file format, quantize, dither, filter, resize, composite).
+// ---------------------------------------------------------------------------
 namespace
 {
-    enum ImageFormat { IMAGE_TGA, IMAGE_PNG, IMAGE_JPEG, IMAGE_UNSUPPORTED };
-
-    ImageFormat FormatFromFilename(const char* filename)
-    {
-        const string path(filename);
-        const size_t dot = path.find_last_of('.');
-        const size_t separator = path.find_last_of("/\\");
-        // Existing scripts may omit a suffix; continue treating those as TGA.
-        if (dot == string::npos || (separator != string::npos && dot < separator))
-            return IMAGE_TGA;
-        string extension = path.substr(dot);
-        for (size_t i = 0; i < extension.size(); ++i)
-            extension[i] = static_cast<char>(tolower(static_cast<unsigned char>(extension[i])));
-        if (extension == ".tga") return IMAGE_TGA;
-        if (extension == ".png") return IMAGE_PNG;
-        if (extension == ".jpg" || extension == ".jpeg") return IMAGE_JPEG;
-        return IMAGE_UNSUPPORTED;
-    }
-
     bool ValidImage(const TargaImage& image)
     {
         return image.data && image.width > 0 && image.height > 0 &&
             static_cast<size_t>(image.width) * image.height <= INT_MAX / 4;
     }
 
-    size_t PixelCount(const TargaImage& image)
+    // Number of pixels (width * height). Use this whenever a loop only needs the
+    // pixel index p, and not the (x, y) position. ValidImage guarantees that
+    // width * height * 4 fits in an int, so an int is enough.
+    int PixelCount(const TargaImage& image)
     {
-        return static_cast<size_t>(image.width) * image.height;
+        return image.width * image.height;
     }
 
     unsigned char ClampByte(double value)
@@ -90,7 +78,10 @@ namespace
         return static_cast<unsigned char>(value + 1e-9);
     }
 
-    double Luminance(const unsigned char* pixel)
+    // Weighted sum of R, G, B (the ToGray formula). A template, so it works for
+    // unsigned char pixels as well as the float / double colors used by NPR.
+    template <typename T>
+    double Luminance(const T* pixel)
     {
         return 0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2];
     }
@@ -114,6 +105,119 @@ namespace
         coordinate %= period;
         if (coordinate < 0) coordinate += period;
         return static_cast<int>(coordinate < length ? coordinate : period - coordinate);
+    }
+
+    enum ImageFormat { IMAGE_TGA, IMAGE_PNG, IMAGE_JPEG, IMAGE_UNSUPPORTED };
+
+    ImageFormat FormatFromFilename(const char* filename)
+    {
+        const string path(filename);
+        const size_t dot = path.find_last_of('.');
+        const size_t separator = path.find_last_of("/\\");
+        // Existing scripts may omit a suffix; continue treating those as TGA.
+        if (dot == string::npos || (separator != string::npos && dot < separator))
+            return IMAGE_TGA;
+        string extension = path.substr(dot);
+        for (size_t i = 0; i < extension.size(); ++i)
+            extension[i] = static_cast<char>(tolower(static_cast<unsigned char>(extension[i])));
+        if (extension == ".tga") return IMAGE_TGA;
+        if (extension == ".png") return IMAGE_PNG;
+        if (extension == ".jpg" || extension == ".jpeg") return IMAGE_JPEG;
+        return IMAGE_UNSUPPORTED;
+    }
+
+    // Populosity helpers: a color is put in a bin by its top 5 bits per channel.
+    struct PaletteColor { int r, g, b; };
+
+    int ColorBin(int r, int g, int b)
+    {
+        return ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+    }
+
+    PaletteColor BinColor(int bin)
+    {
+        PaletteColor color = { ((bin >> 10) & 31) << 3, ((bin >> 5) & 31) << 3, (bin & 31) << 3 };
+        return color;
+    }
+
+    // Index of the palette color with the smallest squared RGB distance.
+    int NearestPaletteIndex(const vector<PaletteColor>& palette, const unsigned char* pixel)
+    {
+        int nearest = 0, bestDistance = INT_MAX;
+        for (int i = 0; i < static_cast<int>(palette.size()); ++i)
+        {
+            const int dr = pixel[RED] - palette[i].r;
+            const int dg = pixel[GREEN] - palette[i].g;
+            const int db = pixel[BLUE] - palette[i].b;
+            const int distance = dr * dr + dg * dg + db * db;
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                nearest = i;
+            }
+        }
+        return nearest;
+    }
+
+    unsigned char NearestUniform(double value, int channel)
+    {
+        const int rg[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
+        const int blue[4] = { 0, 85, 170, 255 };
+        const int* palette = channel == BLUE ? blue : rg;
+        const int count = channel == BLUE ? 4 : 8;
+        int nearest = 0;
+        for (int i = 1; i < count; ++i)
+            if (fabs(value - palette[i]) < fabs(value - palette[nearest])) nearest = i;
+        return static_cast<unsigned char>(palette[nearest]);
+    }
+
+    // Floyd-Steinberg dithering.
+    //   color == false: black/white from the gray value (Dither_FS).
+    //   color == true : each of R, G, B to the uniform palette (Dither_Color).
+    bool FloydSteinberg(TargaImage& image, bool color)
+    {
+        if (!ValidImage(image)) return false;
+        const int w = image.width, h = image.height;
+        const int channels = color ? 3 : 1;
+
+        // Working copy in double, so the diffused error is not rounded away.
+        vector<double> work(PixelCount(image) * channels);
+        for (int p = 0; p < PixelCount(image); ++p)
+            for (int c = 0; c < channels; ++c)
+                work[p * channels + c] = color ? image.data[p * 4 + c]
+                                               : GrayValue(image.data + p * 4);
+
+        // Error goes to: right 7/16, lower-left 3/16, below 5/16, lower-right 1/16.
+        // On odd rows we walk right-to-left (serpentine), so left/right swap.
+        const int dy[4] = { 0, 1, 1, 1 };
+        const double weights[4] = { 7.0 / 16, 3.0 / 16, 5.0 / 16, 1.0 / 16 };
+        for (int y = 0; y < h; ++y)
+        {
+            const int direction = y % 2 == 0 ? 1 : -1;
+            const int dx[4] = { direction, -direction, 0, direction };
+            for (int i = 0; i < w; ++i)
+            {
+                const int x = direction == 1 ? i : w - 1 - i;
+                const int p = y * w + x;
+                for (int c = 0; c < channels; ++c)
+                {
+                    const double oldValue = work[p * channels + c];
+                    const unsigned char newValue = color ? NearestUniform(oldValue, c)
+                                                         : (oldValue >= 127.5 ? 255 : 0);
+                    if (color) image.data[p * 4 + c] = newValue;
+                    else SetGray(image.data + p * 4, newValue);
+
+                    const double error = oldValue - newValue;
+                    for (int n = 0; n < 4; ++n)
+                    {
+                        const int nx = x + dx[n], ny = y + dy[n];
+                        if (nx >= 0 && nx < w && ny < h)
+                            work[(ny * w + nx) * channels + c] += error * weights[n];
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     // Build normalized binomial coefficients outward from the middle. Starting
@@ -184,6 +288,109 @@ namespace
         return true;
     }
 
+    // Width-four triangular reconstruction. At integer coordinates its 1-D
+    // weights are [1,2,1]/4; at half coordinates they are [1,3,3,1]/8.
+    // Their outer products give exactly the half/double masks in the assignment.
+    void SampleBartlett(const TargaImage& source, double x, double y,
+                        unsigned char* pixel)
+    {
+        const int left = static_cast<int>(floor(x)) - 1;
+        const int top = static_cast<int>(floor(y)) - 1;
+        double result[4] = { 0.0, 0.0, 0.0, 0.0 };
+        for (int j = 0; j < 4; ++j)
+            for (int i = 0; i < 4; ++i)
+            {
+                const double wx = Max(0.0, 1.0 - fabs(x - (left + i)) / 2.0);
+                const double wy = Max(0.0, 1.0 - fabs(y - (top + j)) / 2.0);
+                const int sx = Reflect(static_cast<long long>(left) + i, source.width);
+                const int sy = Reflect(static_cast<long long>(top) + j, source.height);
+                const size_t offset = (static_cast<size_t>(sy) * source.width + sx) * 4;
+                for (int c = 0; c < 4; ++c)
+                    result[c] += source.data[offset + c] * wx * wy / 4.0;
+            }
+        for (int c = 0; c < 4; ++c) pixel[c] = ClampByte(result[c]);
+    }
+
+    enum CompositeMode { COMPOSITE_OVER, COMPOSITE_IN, COMPOSITE_OUT,
+                         COMPOSITE_ATOP, COMPOSITE_XOR };
+
+    bool Composite(TargaImage& foreground, const TargaImage* background,
+                   CompositeMode mode)
+    {
+        if (!ValidImage(foreground) || !background || !ValidImage(*background) ||
+            foreground.width != background->width || foreground.height != background->height)
+            return false;
+
+        // Porter-Duff factors apply directly to the stored premultiplied RGBA.
+        for (int p = 0; p < PixelCount(foreground); ++p)
+        {
+            const int i = p * 4;
+            const double a = foreground.data[i + 3] / 255.0;
+            const double b = background->data[i + 3] / 255.0;
+            double fa = 1.0, fb = 1.0 - a;
+            switch (mode)
+            {
+                case COMPOSITE_IN:   fa = b;       fb = 0.0;     break;
+                case COMPOSITE_OUT:  fa = 1.0 - b; fb = 0.0;     break;
+                case COMPOSITE_ATOP: fa = b;       fb = 1.0 - a; break;
+                case COMPOSITE_XOR:  fa = 1.0 - b; fb = 1.0 - a; break;
+                case COMPOSITE_OVER: break;
+            }
+            for (int c = 0; c < 4; ++c)
+                foreground.data[i + c] = ClampByte(foreground.data[i + c] * fa +
+                                                   background->data[i + c] * fb);
+        }
+        return true;
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+//  Helpers, part 2: NPR painterly rendering
+//  (ColorDistance / GridCellError for npr-paint; the rest for
+//  npr-paint-advanced, npr-cartoon and npr-watercolor).
+// ---------------------------------------------------------------------------
+namespace
+{
+    // Euclidean RGB distance between two pixels.
+    double ColorDistance(const unsigned char* a, const unsigned char* b)
+    {
+        double squaredDistance = 0.0;
+        for (int c = 0; c < 3; ++c)
+        {
+            const double delta = a[c] - b[c];
+            squaredDistance += delta * delta;
+        }
+        return sqrt(squaredDistance);
+    }
+
+    // NPR_Paint helper: look at the cell of pixels within "half" of (x, y).
+    // Returns the average error in the cell, and the pixel with the largest
+    // error through bestX / bestY.
+    double GridCellError(const vector<double>& difference, int w, int h,
+                         int x, int y, int half, int& bestX, int& bestY)
+    {
+        double sum = 0.0;
+        int samples = 0;
+        bestX = x;
+        bestY = y;
+        double largestError = difference[y * w + x];
+        for (int sy = Max(0, y - half); sy <= Min(h - 1, y + half); ++sy)
+            for (int sx = Max(0, x - half); sx <= Min(w - 1, x + half); ++sx)
+            {
+                const double error = difference[sy * w + sx];
+                sum += error;
+                ++samples;
+                if (error > largestError)
+                {
+                    largestError = error;
+                    bestX = sx;
+                    bestY = sy;
+                }
+            }
+        return sum / samples;
+    }
+
     struct PaintPoint
     {
         double x, y;
@@ -248,8 +455,7 @@ namespace
         const size_t count = static_cast<size_t>(w) * h;
         vector<float> luminance(count);
         for (size_t p = 0; p < count; ++p)
-            luminance[p] = 0.299f * reference[p * 3] +
-                           0.587f * reference[p * 3 + 1] + 0.114f * reference[p * 3 + 2];
+            luminance[p] = static_cast<float>(Luminance(&reference[p * 3]));
         vector<PaintPoint> gradient(count);
         for (int y = 0; y < h; ++y)
             for (int x = 0; x < w; ++x)
@@ -357,7 +563,7 @@ namespace
         stroke.points.assign(arms[0].rbegin(), arms[0].rend());
         stroke.points.push_back(PaintPoint(x, y));
         stroke.points.insert(stroke.points.end(), arms[1].begin(), arms[1].end());
-        const double luminance = 0.299 * stroke.color[0] + 0.587 * stroke.color[1] + 0.114 * stroke.color[2];
+        const double luminance = Luminance(stroke.color);
         const double valueJitter = (random(randomEngine) - 0.5) * 10.0;
         for (int c = 0; c < 3; ++c)
             stroke.color[c] = Max(0.0, Min(255.0, luminance +
@@ -568,7 +774,7 @@ namespace
 
     void WaterPigment(const double* rgb, double* density)
     {
-        const double luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255.0;
+        const double luminance = Luminance(rgb) / 255.0;
         const double shadow = 1.0 - SmoothPaintStep(0.10, 0.65, luminance);
         const double cool[3] = { -3.0, 1.0, 6.0 };
         for (int c = 0; c < 3; ++c)
@@ -639,194 +845,6 @@ namespace
                         pigment[c] * deposit * amount);
             }
     }
-
-    // Euclidean RGB distance between two pixels.
-    double ColorDistance(const unsigned char* a, const unsigned char* b)
-    {
-        double squaredDistance = 0.0;
-        for (int c = 0; c < 3; ++c)
-        {
-            const double delta = a[c] - b[c];
-            squaredDistance += delta * delta;
-        }
-        return sqrt(squaredDistance);
-    }
-
-    // NPR_Paint helper: look at the cell of pixels within "half" of (x, y).
-    // Returns the average error in the cell, and the pixel with the largest
-    // error through bestX / bestY.
-    double GridCellError(const vector<double>& difference, int w, int h,
-                         int x, int y, int half, int& bestX, int& bestY)
-    {
-        double sum = 0.0;
-        int samples = 0;
-        bestX = x;
-        bestY = y;
-        double largestError = difference[y * w + x];
-        for (int sy = Max(0, y - half); sy <= Min(h - 1, y + half); ++sy)
-            for (int sx = Max(0, x - half); sx <= Min(w - 1, x + half); ++sx)
-            {
-                const double error = difference[sy * w + sx];
-                sum += error;
-                ++samples;
-                if (error > largestError)
-                {
-                    largestError = error;
-                    bestX = sx;
-                    bestY = sy;
-                }
-            }
-        return sum / samples;
-    }
-
-    // Populosity helpers: a color is put in a bin by its top 5 bits per channel.
-    struct PaletteColor { int r, g, b; };
-
-    int ColorBin(int r, int g, int b)
-    {
-        return ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
-    }
-
-    PaletteColor BinColor(int bin)
-    {
-        PaletteColor color = { ((bin >> 10) & 31) << 3, ((bin >> 5) & 31) << 3, (bin & 31) << 3 };
-        return color;
-    }
-
-    // Index of the palette color with the smallest squared RGB distance.
-    int NearestPaletteIndex(const vector<PaletteColor>& palette, const unsigned char* pixel)
-    {
-        int nearest = 0, bestDistance = INT_MAX;
-        for (int i = 0; i < static_cast<int>(palette.size()); ++i)
-        {
-            const int dr = pixel[RED] - palette[i].r;
-            const int dg = pixel[GREEN] - palette[i].g;
-            const int db = pixel[BLUE] - palette[i].b;
-            const int distance = dr * dr + dg * dg + db * db;
-            if (distance < bestDistance)
-            {
-                bestDistance = distance;
-                nearest = i;
-            }
-        }
-        return nearest;
-    }
-
-    unsigned char NearestUniform(double value, int channel)
-    {
-        const int rg[8] = { 0, 36, 73, 109, 146, 182, 219, 255 };
-        const int blue[4] = { 0, 85, 170, 255 };
-        const int* palette = channel == BLUE ? blue : rg;
-        const int count = channel == BLUE ? 4 : 8;
-        int nearest = 0;
-        for (int i = 1; i < count; ++i)
-            if (fabs(value - palette[i]) < fabs(value - palette[nearest])) nearest = i;
-        return static_cast<unsigned char>(palette[nearest]);
-    }
-
-    // Floyd-Steinberg dithering.
-    //   color == false: black/white from the gray value (Dither_FS).
-    //   color == true : each of R, G, B to the uniform palette (Dither_Color).
-    bool FloydSteinberg(TargaImage& image, bool color)
-    {
-        if (!ValidImage(image)) return false;
-        const int w = image.width, h = image.height;
-        const int channels = color ? 3 : 1;
-
-        // Working copy in double, so the diffused error is not rounded away.
-        vector<double> work(PixelCount(image) * channels);
-        for (int p = 0; p < w * h; ++p)
-            for (int c = 0; c < channels; ++c)
-                work[p * channels + c] = color ? image.data[p * 4 + c]
-                                               : GrayValue(image.data + p * 4);
-
-        // Error goes to: right 7/16, lower-left 3/16, below 5/16, lower-right 1/16.
-        // On odd rows we walk right-to-left (serpentine), so left/right swap.
-        const int dy[4] = { 0, 1, 1, 1 };
-        const double weights[4] = { 7.0 / 16, 3.0 / 16, 5.0 / 16, 1.0 / 16 };
-        for (int y = 0; y < h; ++y)
-        {
-            const int direction = y % 2 == 0 ? 1 : -1;
-            const int dx[4] = { direction, -direction, 0, direction };
-            for (int i = 0; i < w; ++i)
-            {
-                const int x = direction == 1 ? i : w - 1 - i;
-                const int p = y * w + x;
-                for (int c = 0; c < channels; ++c)
-                {
-                    const double oldValue = work[p * channels + c];
-                    const unsigned char newValue = color ? NearestUniform(oldValue, c)
-                                                         : (oldValue >= 127.5 ? 255 : 0);
-                    if (color) image.data[p * 4 + c] = newValue;
-                    else SetGray(image.data + p * 4, newValue);
-
-                    const double error = oldValue - newValue;
-                    for (int n = 0; n < 4; ++n)
-                    {
-                        const int nx = x + dx[n], ny = y + dy[n];
-                        if (nx >= 0 && nx < w && ny < h)
-                            work[(ny * w + nx) * channels + c] += error * weights[n];
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    // Width-four triangular reconstruction. At integer coordinates its 1-D
-    // weights are [1,2,1]/4; at half coordinates they are [1,3,3,1]/8.
-    // Their outer products give exactly the half/double masks in the assignment.
-    void SampleBartlett(const TargaImage& source, double x, double y,
-                        unsigned char* pixel)
-    {
-        const int left = static_cast<int>(floor(x)) - 1;
-        const int top = static_cast<int>(floor(y)) - 1;
-        double result[4] = { 0.0, 0.0, 0.0, 0.0 };
-        for (int j = 0; j < 4; ++j)
-            for (int i = 0; i < 4; ++i)
-            {
-                const double wx = Max(0.0, 1.0 - fabs(x - (left + i)) / 2.0);
-                const double wy = Max(0.0, 1.0 - fabs(y - (top + j)) / 2.0);
-                const int sx = Reflect(static_cast<long long>(left) + i, source.width);
-                const int sy = Reflect(static_cast<long long>(top) + j, source.height);
-                const size_t offset = (static_cast<size_t>(sy) * source.width + sx) * 4;
-                for (int c = 0; c < 4; ++c)
-                    result[c] += source.data[offset + c] * wx * wy / 4.0;
-            }
-        for (int c = 0; c < 4; ++c) pixel[c] = ClampByte(result[c]);
-    }
-
-    enum CompositeMode { COMPOSITE_OVER, COMPOSITE_IN, COMPOSITE_OUT,
-                         COMPOSITE_ATOP, COMPOSITE_XOR };
-
-    bool Composite(TargaImage& foreground, const TargaImage* background,
-                   CompositeMode mode)
-    {
-        if (!ValidImage(foreground) || !background || !ValidImage(*background) ||
-            foreground.width != background->width || foreground.height != background->height)
-            return false;
-
-        // Porter-Duff factors apply directly to the stored premultiplied RGBA.
-        for (size_t p = 0; p < PixelCount(foreground); ++p)
-        {
-            const size_t i = p * 4;
-            const double a = foreground.data[i + 3] / 255.0;
-            const double b = background->data[i + 3] / 255.0;
-            double fa = 1.0, fb = 1.0 - a;
-            switch (mode)
-            {
-                case COMPOSITE_IN:   fa = b;       fb = 0.0;     break;
-                case COMPOSITE_OUT:  fa = 1.0 - b; fb = 0.0;     break;
-                case COMPOSITE_ATOP: fa = b;       fb = 1.0 - a; break;
-                case COMPOSITE_XOR:  fa = 1.0 - b; fb = 1.0 - a; break;
-                case COMPOSITE_OVER: break;
-            }
-            for (int c = 0; c < 4; ++c)
-                foreground.data[i + c] = ClampByte(foreground.data[i + c] * fa +
-                                                   background->data[i + c] * fb);
-        }
-        return true;
-    }
 }
 
 
@@ -851,6 +869,7 @@ double Binomial(int n, int s)
 TargaImage::TargaImage() : width(0), height(0), data(NULL)
 {}// TargaImage
 
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      Constructor.  Initialize member variables.
@@ -861,7 +880,6 @@ TargaImage::TargaImage(int w, int h) : width(w), height(h)
    data = new unsigned char[width * height * 4];
    ClearToBlack();
 }// TargaImage
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -880,6 +898,7 @@ TargaImage::TargaImage(int w, int h, unsigned char *d)
     for (i = 0; i < width * height * 4; i++)
 	    data[i] = d[i];
 }// TargaImage
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -958,7 +977,7 @@ bool TargaImage::Save_Image(const char *filename)
     {
         const int channels = format == IMAGE_PNG ? 4 : 3;
         vector<unsigned char> pixels(PixelCount(*this) * channels);
-        for (size_t p = 0; p < PixelCount(*this); ++p)
+        for (int p = 0; p < PixelCount(*this); ++p)
         {
             const unsigned int alpha = data[p * 4 + 3];
             for (int c = 0; c < 3; ++c)
@@ -1077,6 +1096,10 @@ TargaImage* TargaImage::Load_Image(char *filename)
 }// Load_Image
 
 
+// ===========================================================================
+//  Grading sheet: ToGray
+// ===========================================================================
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      Convert image to grayscale.  Red, green, and blue channels should all 
@@ -1087,7 +1110,7 @@ TargaImage* TargaImage::Load_Image(char *filename)
 bool TargaImage::To_Grayscale()
 {
     if (!ValidImage(*this)) return false;
-    for (int p = 0; p < width * height; ++p)
+    for (int p = 0; p < PixelCount(*this); ++p)
     {
         unsigned char* pixel = data + p * 4;
         SetGray(pixel, GrayValue(pixel));   // gray = 0.299 R + 0.587 G + 0.114 B
@@ -1096,6 +1119,10 @@ bool TargaImage::To_Grayscale()
     return true;
 }// To_Grayscale
 
+
+// ===========================================================================
+//  Grading sheet: Quantize (Uniform, Populosity)
+// ===========================================================================
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -1107,7 +1134,7 @@ bool TargaImage::Quant_Uniform()
 {
     if (!ValidImage(*this)) return false;
     // 8 levels of red, 8 of green, 4 of blue: 8 * 8 * 4 = 256 colors.
-    for (int p = 0; p < width * height; ++p)
+    for (int p = 0; p < PixelCount(*this); ++p)
     {
         unsigned char* pixel = data + p * 4;
         const int rLevel = pixel[RED] >> 5;     // 0~7
@@ -1130,7 +1157,7 @@ bool TargaImage::Quant_Uniform()
 bool TargaImage::Quant_Populosity()
 {
     if (!ValidImage(*this)) return false;
-    const int pixelCount = width * height;
+    const int pixelCount = PixelCount(*this);
 
     // Step 1: histogram. Keep 5 bits per channel, so there are 32 x 32 x 32 bins.
     vector<int> histogram(32 * 32 * 32, 0);
@@ -1166,6 +1193,10 @@ bool TargaImage::Quant_Populosity()
 }// Quant_Populosity
 
 
+// ===========================================================================
+//  Grading sheet: Dithering (Naive, Brightness, Random, Cluster, Floyd, Color Floyd)
+// ===========================================================================
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      Dither the image using a threshold of 1/2.  Return success of operation.
@@ -1174,46 +1205,13 @@ bool TargaImage::Quant_Populosity()
 bool TargaImage::Dither_Threshold()
 {
     if (!ValidImage(*this)) return false;
-    for (int p = 0; p < width * height; ++p)
+    for (int p = 0; p < PixelCount(*this); ++p)
     {
         unsigned char* pixel = data + p * 4;
         SetGray(pixel, GrayValue(pixel) >= 128 ? 255 : 0);   // threshold 0.5
     }
     return true;
 }// Dither_Threshold
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//      Dither image using random dithering.  Return success of operation.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Dither_Random()
-{
-    if (!ValidImage(*this)) return false;
-    mt19937 randomEngine((random_device())());
-    uniform_real_distribution<double> noise(-0.2, 0.2);
-    for (int p = 0; p < width * height; ++p)
-    {
-        unsigned char* pixel = data + p * 4;
-        // Add a random value in [-0.2, 0.2], then threshold at 0.5.
-        const double intensity = GrayValue(pixel) / 255.0 + noise(randomEngine);
-        SetGray(pixel, intensity >= 0.5 ? 255 : 0);
-    }
-    return true;
-}// Dither_Random
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//      Perform Floyd-Steinberg dithering on the image.  Return success of 
-//  operation.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Dither_FS()
-{
-    return FloydSteinberg(*this, false);
-}// Dither_FS
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1225,7 +1223,7 @@ bool TargaImage::Dither_FS()
 bool TargaImage::Dither_Bright()
 {
     if (!ValidImage(*this)) return false;
-    const int pixelCount = width * height;
+    const int pixelCount = PixelCount(*this);
 
     // Count the pixels at each gray level, and the total brightness.
     vector<int> levelCount(256, 0);
@@ -1269,6 +1267,27 @@ bool TargaImage::Dither_Bright()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+//      Dither image using random dithering.  Return success of operation.
+//
+///////////////////////////////////////////////////////////////////////////////
+bool TargaImage::Dither_Random()
+{
+    if (!ValidImage(*this)) return false;
+    mt19937 randomEngine((random_device())());
+    uniform_real_distribution<double> noise(-0.2, 0.2);
+    for (int p = 0; p < PixelCount(*this); ++p)
+    {
+        unsigned char* pixel = data + p * 4;
+        // Add a random value in [-0.2, 0.2], then threshold at 0.5.
+        const double intensity = GrayValue(pixel) / 255.0 + noise(randomEngine);
+        SetGray(pixel, intensity >= 0.5 ? 255 : 0);
+    }
+    return true;
+}// Dither_Random
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
 //      Perform clustered differing of the image.  Return success of operation.
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -1296,6 +1315,18 @@ bool TargaImage::Dither_Cluster()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+//      Perform Floyd-Steinberg dithering on the image.  Return success of 
+//  operation.
+//
+///////////////////////////////////////////////////////////////////////////////
+bool TargaImage::Dither_FS()
+{
+    return FloydSteinberg(*this, false);
+}// Dither_FS
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
 //  Convert the image to an 8 bit image using Floyd-Steinberg dithering over
 //  a uniform quantization - the same quantization as in Quant_Uniform.
 //  Return success of operation.
@@ -1307,100 +1338,9 @@ bool TargaImage::Dither_Color()
 }// Dither_Color
 
 
-///////////////////////////////////////////////////////////////////////////////
-//
-//      Composite the current image over the given image.  Return success of 
-//  operation.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Comp_Over(TargaImage* pImage)
-{
-    return Composite(*this, pImage, COMPOSITE_OVER);
-}// Comp_Over
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//      Composite this image "in" the given image.  See lecture notes for 
-//  details.  Return success of operation.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Comp_In(TargaImage* pImage)
-{
-    return Composite(*this, pImage, COMPOSITE_IN);
-}// Comp_In
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//      Composite this image "out" the given image.  See lecture notes for 
-//  details.  Return success of operation.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Comp_Out(TargaImage* pImage)
-{
-    return Composite(*this, pImage, COMPOSITE_OUT);
-}// Comp_Out
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//      Composite current image "atop" given image.  Return success of 
-//  operation.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Comp_Atop(TargaImage* pImage)
-{
-    return Composite(*this, pImage, COMPOSITE_ATOP);
-}// Comp_Atop
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//      Composite this image with given image using exclusive or (XOR).  Return
-//  success of operation.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Comp_Xor(TargaImage* pImage)
-{
-    return Composite(*this, pImage, COMPOSITE_XOR);
-}// Comp_Xor
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//      Calculate the difference bewteen this imag and the given one.  Image 
-//  dimensions must be equal.  Return success of operation.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Difference(TargaImage* pImage)
-{
-    if (!ValidImage(*this) || !pImage || !ValidImage(*pImage))
-        return false;
-
-    if (width != pImage->width || height != pImage->height)
-    {
-        cout << "Difference: Images not the same size\n";
-        return false;
-    }// if
-
-    for (int i = 0 ; i < width * height * 4 ; i += 4)
-    {
-        unsigned char        rgb1[3];
-        unsigned char        rgb2[3];
-
-        RGBA_To_RGB(data + i, rgb1);
-        RGBA_To_RGB(pImage->data + i, rgb2);
-
-        data[i] = abs(rgb1[0] - rgb2[0]);
-        data[i+1] = abs(rgb1[1] - rgb2[1]);
-        data[i+2] = abs(rgb1[2] - rgb2[2]);
-        data[i+3] = 255;
-    }
-
-    return true;
-}// Difference
-
+// ===========================================================================
+//  Grading sheet: Filter (Box, Bartlett, Gaussian, Ab G, Edge Detect, Edge Enhance)
+// ===========================================================================
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -1436,6 +1376,7 @@ bool TargaImage::Filter_Gaussian()
 {
     return Filter_Gaussian_N(5);
 }// Filter_Gaussian
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -1478,6 +1419,100 @@ bool TargaImage::Filter_Enhance()
 }// Filter_Enhance
 
 
+// ===========================================================================
+//  Grading sheet: Resizing (Half, Double, Arbitrary Size, Arbitrary Rotate)
+// ===========================================================================
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//      Halve the dimensions of this image.  Return success of operation.
+//
+///////////////////////////////////////////////////////////////////////////////
+bool TargaImage::Half_Size()
+{
+    return Resize(0.5f);
+}// Half_Size
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//      Double the dimensions of this image.  Return success of operation.
+//
+///////////////////////////////////////////////////////////////////////////////
+bool TargaImage::Double_Size()
+{
+    return Resize(2.0f);
+}// Double_Size
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//      Scale the image dimensions by any positive factor, using Bartlett
+//  reconstruction for both enlargement and reduction.
+//
+///////////////////////////////////////////////////////////////////////////////
+bool TargaImage::Resize(float scale)
+{
+    if (!ValidImage(*this) || !std::isfinite(scale) || scale <= 0.0f)
+        return false;
+    const double scaledWidth = floor(width * static_cast<double>(scale));
+    const double scaledHeight = floor(height * static_cast<double>(scale));
+    if (scaledWidth > INT_MAX || scaledHeight > INT_MAX) return false;
+    // A very small image/factor still produces a valid one-pixel axis.
+    const int newWidth = Max(1, static_cast<int>(scaledWidth));
+    const int newHeight = Max(1, static_cast<int>(scaledHeight));
+    const size_t newCount = static_cast<size_t>(newWidth) * newHeight;
+    if (newCount > INT_MAX / 4) return false;
+
+    unsigned char* resized = new unsigned char[newCount * 4];
+    for (int y = 0; y < newHeight; ++y)
+        for (int x = 0; x < newWidth; ++x)
+            SampleBartlett(*this, x / static_cast<double>(scale),
+                           y / static_cast<double>(scale),
+                           resized + (static_cast<size_t>(y) * newWidth + x) * 4);
+    delete[] data;
+    data = resized;
+    width = newWidth;
+    height = newHeight;
+    return true;
+}// Resize
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//      Rotate the image clockwise by the given angle.  Do not resize the 
+//  image.  Return success of operation.
+//
+///////////////////////////////////////////////////////////////////////////////
+bool TargaImage::Rotate(float angleDegrees)
+{
+    if (!ValidImage(*this) || !std::isfinite(angleDegrees)) return false;
+    const double angle = fmod(static_cast<double>(angleDegrees), 360.0) * acos(-1.0) / 180.0;
+    const double cosine = cos(angle), sine = sin(angle);
+    const double centerX = (width - 1) / 2.0, centerY = (height - 1) / 2.0;
+    vector<unsigned char> rotated(PixelCount(*this) * 4, 0);
+    for (int y = 0; y < height; ++y)
+        for (int x = 0; x < width; ++x)
+        {
+            const double dx = x - centerX, dy = y - centerY;
+            // Inverse map a clockwise rotation in screen coordinates (y down).
+            double sx = cosine * dx + sine * dy + centerX;
+            double sy = -sine * dx + cosine * dy + centerY;
+            if (sx < -1e-9 || sx > width - 1 + 1e-9 || sy < -1e-9 || sy > height - 1 + 1e-9)
+                continue; // No source data: leave transparent black.
+            sx = Max(0.0, Min(static_cast<double>(width - 1), sx));
+            sy = Max(0.0, Min(static_cast<double>(height - 1), sy));
+            SampleBartlett(*this, sx, sy, &rotated[(static_cast<size_t>(y) * width + x) * 4]);
+        }
+    memcpy(data, &rotated[0], rotated.size());
+    return true;
+}// Rotate
+
+
+// ===========================================================================
+//  Grading sheet: NPR (Basic, Advance)
+// ===========================================================================
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      Run simplified version of Hertzmann's painterly image filter.
@@ -1492,7 +1527,7 @@ bool TargaImage::NPR_Paint()
 
     // Simplified circular-stroke algorithm from Hertzmann, SIGGRAPH 1998,
     // section 2.1: https://mrl.cs.nyu.edu/publications/painterly98/
-    const int pixelCount = width * height;
+    const int pixelCount = PixelCount(*this);
 
     // Paint on an opaque copy; remember the alpha to restore it at the end.
     TargaImage source(*this);
@@ -1569,7 +1604,6 @@ bool TargaImage::NPR_Paint()
     }
     return true;
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1877,91 +1911,108 @@ bool TargaImage::NPR_Watercolor(float brushScale, unsigned int seed)
 }
 
 
+// ===========================================================================
+//  Not on the grading sheet: compositing and difference
+// ===========================================================================
+
 ///////////////////////////////////////////////////////////////////////////////
 //
-//      Halve the dimensions of this image.  Return success of operation.
+//      Composite the current image over the given image.  Return success of 
+//  operation.
 //
 ///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Half_Size()
+bool TargaImage::Comp_Over(TargaImage* pImage)
 {
-    return Resize(0.5f);
-}// Half_Size
+    return Composite(*this, pImage, COMPOSITE_OVER);
+}// Comp_Over
 
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-//      Double the dimensions of this image.  Return success of operation.
+//      Composite this image "in" the given image.  See lecture notes for 
+//  details.  Return success of operation.
 //
 ///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Double_Size()
+bool TargaImage::Comp_In(TargaImage* pImage)
 {
-    return Resize(2.0f);
-}// Double_Size
+    return Composite(*this, pImage, COMPOSITE_IN);
+}// Comp_In
 
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-//      Scale the image dimensions by any positive factor, using Bartlett
-//  reconstruction for both enlargement and reduction.
+//      Composite this image "out" the given image.  See lecture notes for 
+//  details.  Return success of operation.
 //
 ///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Resize(float scale)
+bool TargaImage::Comp_Out(TargaImage* pImage)
 {
-    if (!ValidImage(*this) || !std::isfinite(scale) || scale <= 0.0f)
+    return Composite(*this, pImage, COMPOSITE_OUT);
+}// Comp_Out
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//      Composite current image "atop" given image.  Return success of 
+//  operation.
+//
+///////////////////////////////////////////////////////////////////////////////
+bool TargaImage::Comp_Atop(TargaImage* pImage)
+{
+    return Composite(*this, pImage, COMPOSITE_ATOP);
+}// Comp_Atop
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//      Composite this image with given image using exclusive or (XOR).  Return
+//  success of operation.
+//
+///////////////////////////////////////////////////////////////////////////////
+bool TargaImage::Comp_Xor(TargaImage* pImage)
+{
+    return Composite(*this, pImage, COMPOSITE_XOR);
+}// Comp_Xor
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//      Calculate the difference bewteen this imag and the given one.  Image 
+//  dimensions must be equal.  Return success of operation.
+//
+///////////////////////////////////////////////////////////////////////////////
+bool TargaImage::Difference(TargaImage* pImage)
+{
+    if (!ValidImage(*this) || !pImage || !ValidImage(*pImage))
         return false;
-    const double scaledWidth = floor(width * static_cast<double>(scale));
-    const double scaledHeight = floor(height * static_cast<double>(scale));
-    if (scaledWidth > INT_MAX || scaledHeight > INT_MAX) return false;
-    // A very small image/factor still produces a valid one-pixel axis.
-    const int newWidth = Max(1, static_cast<int>(scaledWidth));
-    const int newHeight = Max(1, static_cast<int>(scaledHeight));
-    const size_t newCount = static_cast<size_t>(newWidth) * newHeight;
-    if (newCount > INT_MAX / 4) return false;
 
-    unsigned char* resized = new unsigned char[newCount * 4];
-    for (int y = 0; y < newHeight; ++y)
-        for (int x = 0; x < newWidth; ++x)
-            SampleBartlett(*this, x / static_cast<double>(scale),
-                           y / static_cast<double>(scale),
-                           resized + (static_cast<size_t>(y) * newWidth + x) * 4);
-    delete[] data;
-    data = resized;
-    width = newWidth;
-    height = newHeight;
+    if (width != pImage->width || height != pImage->height)
+    {
+        cout << "Difference: Images not the same size\n";
+        return false;
+    }// if
+
+    for (int i = 0 ; i < width * height * 4 ; i += 4)
+    {
+        unsigned char        rgb1[3];
+        unsigned char        rgb2[3];
+
+        RGBA_To_RGB(data + i, rgb1);
+        RGBA_To_RGB(pImage->data + i, rgb2);
+
+        data[i] = abs(rgb1[0] - rgb2[0]);
+        data[i+1] = abs(rgb1[1] - rgb2[1]);
+        data[i+2] = abs(rgb1[2] - rgb2[2]);
+        data[i+3] = 255;
+    }
+
     return true;
-}// Resize
+}// Difference
 
 
-//////////////////////////////////////////////////////////////////////////////
-//
-//      Rotate the image clockwise by the given angle.  Do not resize the 
-//  image.  Return success of operation.
-//
-///////////////////////////////////////////////////////////////////////////////
-bool TargaImage::Rotate(float angleDegrees)
-{
-    if (!ValidImage(*this) || !std::isfinite(angleDegrees)) return false;
-    const double angle = fmod(static_cast<double>(angleDegrees), 360.0) * acos(-1.0) / 180.0;
-    const double cosine = cos(angle), sine = sin(angle);
-    const double centerX = (width - 1) / 2.0, centerY = (height - 1) / 2.0;
-    vector<unsigned char> rotated(PixelCount(*this) * 4, 0);
-    for (int y = 0; y < height; ++y)
-        for (int x = 0; x < width; ++x)
-        {
-            const double dx = x - centerX, dy = y - centerY;
-            // Inverse map a clockwise rotation in screen coordinates (y down).
-            double sx = cosine * dx + sine * dy + centerX;
-            double sy = -sine * dx + cosine * dy + centerY;
-            if (sx < -1e-9 || sx > width - 1 + 1e-9 || sy < -1e-9 || sy > height - 1 + 1e-9)
-                continue; // No source data: leave transparent black.
-            sx = Max(0.0, Min(static_cast<double>(width - 1), sx));
-            sy = Max(0.0, Min(static_cast<double>(height - 1), sy));
-            SampleBartlett(*this, sx, sy, &rotated[(static_cast<size_t>(y) * width + x) * 4]);
-        }
-    memcpy(data, &rotated[0], rotated.size());
-    return true;
-}// Rotate
-
+// ===========================================================================
+//  Private helpers and the Stroke class
+// ===========================================================================
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -2072,6 +2123,7 @@ void TargaImage::Paint_Stroke(const Stroke& s) {
 //
 ///////////////////////////////////////////////////////////////////////////////
 Stroke::Stroke() {}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //

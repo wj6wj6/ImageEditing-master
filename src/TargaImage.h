@@ -33,6 +33,7 @@ class TargaImage
         bool Save_Image(const char*);               // Save TGA/PNG/JPEG; JPEG uses a white background.
         static TargaImage* Load_Image(char*);       // Load TGA/PNG/JPEG. Returns a new object, or NULL on failure.
 
+        // Operations in grading-sheet order.
         bool To_Grayscale();
 
         bool Quant_Uniform();
@@ -40,19 +41,11 @@ class TargaImage
         bool Quant_Median();
 
         bool Dither_Threshold();
-        bool Dither_Random();
-        bool Dither_FS();
         bool Dither_Bright();
+        bool Dither_Random();
         bool Dither_Cluster();
+        bool Dither_FS();
         bool Dither_Color();
-
-        bool Comp_Over(TargaImage* pImage);
-        bool Comp_In(TargaImage* pImage);
-        bool Comp_Out(TargaImage* pImage);
-        bool Comp_Atop(TargaImage* pImage);
-        bool Comp_Xor(TargaImage* pImage);
-
-        bool Difference(TargaImage* pImage);
 
         bool Filter_Box();
         bool Filter_Bartlett();
@@ -61,16 +54,25 @@ class TargaImage
         bool Filter_Edge();
         bool Filter_Enhance();
 
+        bool Half_Size();
+        bool Double_Size();
+        bool Resize(float scale);
+        bool Rotate(float angleDegrees);
+
         bool NPR_Paint();
         // Curved, textured strokes. Scale: 0.5..3; seed makes a run reproducible.
         bool NPR_Paint_Advanced(float brushScale = 1.0f, unsigned int seed = 1337);
         bool NPR_Cartoon(float strength = 1.0f);
         bool NPR_Watercolor(float brushScale = 1.0f, unsigned int seed = 1337);
 
-        bool Half_Size();
-        bool Double_Size();
-        bool Resize(float scale);
-        bool Rotate(float angleDegrees);
+        // Not on the grading sheet.
+        bool Comp_Over(TargaImage* pImage);
+        bool Comp_In(TargaImage* pImage);
+        bool Comp_Out(TargaImage* pImage);
+        bool Comp_Atop(TargaImage* pImage);
+        bool Comp_Xor(TargaImage* pImage);
+
+        bool Difference(TargaImage* pImage);
 
     private:
 	// helper function for format conversion
