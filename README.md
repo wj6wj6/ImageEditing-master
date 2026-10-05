@@ -4,7 +4,7 @@
 [專案技術文件（Tech Doc）](docs/TECH_DOC.md)。
 
 依評分表逐項解釋實作流程、公式、程式位置、數值例子與測試方式，請參閱
-[逐項實作詳解](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/docs/IMPLEMENTATION_GUIDE.md>)。
+[逐項實作詳解](<docs/IMPLEMENTATION_GUIDE.md>)。
 
 The existing command input and scripts support `.tga`, `.png`, `.jpg`, and
 `.jpeg`. Extensions are case insensitive. Files without an extension retain
