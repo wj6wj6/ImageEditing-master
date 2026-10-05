@@ -4,7 +4,7 @@
 
 文件日期：2026-09-30。內容依目前 `ImageEditing/ImageEditing-master` 工作樹的原始碼、CMake 設定與測試撰寫。以下「專案根目錄」均指 `ImageEditing-master`，不是外層的 `P1`；指令範例皆從專案根目錄執行。
 
-2026-10-03 補充：[依評分表逐項實作詳解](<E:/Development/NTUST-Computer graphics projects/P1/ImageEditing/ImageEditing-master/docs/IMPLEMENTATION_GUIDE.md>) 提供各項公式、程式位置、數值例子與展示說法。本頁 Cluster 索引已同步為目前程式的 `mask[y % 4][x % 4]`；第 9.2 節仍是 2026-09-30 的歷史測試紀錄，不代表這次重新執行測試。
+2026-10-03 補充：[依評分表逐項實作詳解](<IMPLEMENTATION_GUIDE.md>) 提供各項公式、程式位置、數值例子與展示說法。本頁 Cluster 索引已同步為目前程式的 `mask[y % 4][x % 4]`；第 9.2 節仍是 2026-09-30 的歷史測試紀錄，不代表這次重新執行測試。
 
 本文件供程式維護、技術報告與展示說明使用。操作步驟見 [使用手冊](USER_MANUAL.md)，NPR 的細部設計與既有成果見 [NPR 技術說明](NPR_TECHNICAL.md)。本文件記錄目前行為；舊導覽中「演算法仍清成黑色」的狀態已不適用。
 
