@@ -6,6 +6,12 @@
 依評分表逐項解釋實作流程、公式、程式位置、數值例子與測試方式，請參閱
 [逐項實作詳解](<docs/IMPLEMENTATION_GUIDE.md>)。
 
+參數與設計取捨的決策紀錄：[進階油畫 NPR 的筆刷尺度校準（ADR-0001）](docs/adr/0001-advanced-npr-brush-scale.md)。
+
+進階油畫主函式與輔助函式的數字、單位、來源和調整影響，見 [常數來源與選值依據（ADR-0002）](docs/adr/0002-advanced-npr-parameter-provenance.md)。
+
+另外兩種風格的完整常數說明：[卡通（ADR-0003）](docs/adr/0003-cartoon-npr-parameters.md)、[水彩（ADR-0004）](docs/adr/0004-watercolor-npr-parameters.md)，分別記錄公式、風格預設及尚未驗證的選值。
+
 The existing command input and scripts support `.tga`, `.png`, `.jpg`, and
 `.jpeg`. Extensions are case insensitive. Files without an extension retain
 the original TGA behavior. Other output extensions are rejected.

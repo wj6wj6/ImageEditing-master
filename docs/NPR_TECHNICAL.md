@@ -40,6 +40,10 @@ R = clamp(min(width, height) × brushScale / 58, 2, 32)
 radii = [R, max(1, R/2), max(0.75, R/4)]
 ```
 
+`58` 是由範例圖短邊 `464` 與選定最大半徑 `8` 反算的經驗參數。選值理由、替代方案及上下限的影響，記錄於 [ADR-0001：進階油畫 NPR 的筆刷尺度校準](adr/0001-advanced-npr-brush-scale.md)。
+
+其餘常數的用途、單位、公式來源、風格選值及未驗證之處，逐項記錄於 [ADR-0002：進階油畫 NPR 的常數來源與選值依據](adr/0002-advanced-npr-parameter-provenance.md)，涵蓋主函式及參考圖、梯度、追蹤、曲線、刷毛繪製流程。
+
 `wiz.tga` 為 593×464，預設半徑是 8、4、2。每層使用標準差 `max(0.5, radius/2)`、截斷於三倍標準差的可分離 Gaussian，作為該尺度的參考圖。這是進階 NPR 自己的 Gaussian，與基本濾波指令使用的二項式核分開。
 
 模糊時同時處理預乘 RGB 與 Alpha，再以模糊後的 Alpha 正規化 RGB。如此不會把全透明像素內的黑色混進物體邊緣。
@@ -78,6 +82,8 @@ radii = [R, max(1, R/2), max(0.75, R/4)]
 
 ## Advance NPR 2：卡通／賽璐璐
 
+常數的單位、公式來源、預設值與調整影響，見 [ADR-0003：卡通 NPR 的常數來源與選值依據](adr/0003-cartoon-npr-parameters.md)。
+
 `npr-cartoon [strength]` 呼叫 `NPR_Cartoon()`。視覺方向參考 [《GUILTY GEAR -STRIVE-》官方角色頁](https://www.guiltygear.com/ggst/en/character/sol/)，重點是清楚的色塊、分層明暗與深色輪廓。實作為輸入圖片的二維風格化處理。
 
 1. **保邊平滑**：三次 bilateral filter，以空間距離、RGB 色差及 Alpha 決定鄰居權重。範圍權重使用查表，避免在每個鄰居位置重複計算指數。半徑依強度在 2～5 像素間調整。
@@ -88,6 +94,8 @@ radii = [R, max(1, R/2), max(0.75, R/4)]
 ![卡通效果](../examples/npr/cartoon.png)
 
 ## Advance NPR 3：表現性水彩
+
+常數的單位、密度與 RGB 混色的差別、預設值及限制，見 [ADR-0004：水彩 NPR 的常數來源與選值依據](adr/0004-watercolor-npr-parameters.md)。
 
 `npr-watercolor [brush-scale [seed]]` 呼叫 `NPR_Watercolor()`。依使用者指定，以 [《Disco Elysium》](https://discoelysium.com/) 作為繪畫風格參考，加入冷色暗部、暖紙底、鬆散色塊及局部乾筆。
 

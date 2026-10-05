@@ -406,8 +406,11 @@ namespace
 
     // Blur premultiplied color AND alpha, then normalize by the filtered alpha.
     // Transparent black texels must not create a dark fringe in the paint.
+    // NPR parameter provenance: docs/adr/0002-advanced-npr-parameter-provenance.md
     vector<float> PaintReference(const TargaImage& source, double radius)
     {
+        // Chosen blur scale: half a brush radius, with a 0.5-pixel floor.
+        // Truncate at three sigma, then renormalize the finite Gaussian kernel.
         const double sigma = Max(0.5, radius * 0.5);
         const int extent = static_cast<int>(ceil(3.0 * sigma));
         vector<double> kernel(extent * 2 + 1);
@@ -443,6 +446,8 @@ namespace
                         rgba[c] += kernel[k + extent] * horizontal[src + c];
                 }
                 const size_t dst = (static_cast<size_t>(y) * source.width + x) * 3;
+                // Alpha is in byte units; epsilon avoids unstable unpremultiplication.
+                // 240 is a chosen light-gray fallback when no color is supported.
                 for (int c = 0; c < 3; ++c)
                     reference[dst + c] = static_cast<float>(rgba[3] > 1e-6
                         ? Min(255.0, rgba[c] * 255.0 / rgba[3]) : 240.0);
@@ -461,6 +466,7 @@ namespace
             for (int x = 0; x < w; ++x)
             {
                 double gx = 0.0, gy = 0.0;
+                // Sobel: a centered difference times orthogonal [1, 2, 1] smoothing.
                 for (int j = -1; j <= 1; ++j)
                     for (int i = -1; i <= 1; ++i)
                     {
@@ -469,6 +475,7 @@ namespace
                         gx += i * (j == 0 ? 2 : 1) * value;
                         gy += j * (i == 0 ? 2 : 1) * value;
                     }
+                // This kernel returns eight times the slope of a linear ramp.
                 gradient[static_cast<size_t>(y) * w + x] = PaintPoint(gx / 8, gy / 8);
             }
         return gradient;
@@ -505,11 +512,14 @@ namespace
     {
         CurvedStroke stroke;
         stroke.radius = radius;
+        // Style default: mostly opaque paint, with some underlying color retained.
         stroke.opacity = 0.86;
         const size_t start = (static_cast<size_t>(y) * source.width + x) * 3;
         for (int c = 0; c < 3; ++c) stroke.color[c] = reference[start + c];
         uniform_real_distribution<double> random(0.0, 1.0);
+        // One full cycle randomizes the bristle pattern's phase.
         stroke.phase = random(randomEngine) * 2.0 * c_pi;
+        // Chosen flat-area slant: -0.65 radians with +/-0.9 radians of variation.
         const double flatAngle = -0.65 + (random(randomEngine) - 0.5) * 1.8;
         vector<PaintPoint> arms[2];
         // Follow BOTH directions of the isophote so the seed lies in the
@@ -517,11 +527,13 @@ namespace
         for (int arm = 0; arm < 2; ++arm)
         {
             PaintPoint point(x, y), previous;
+            // Seven radius-sized steps per side cap both length and rendering work.
             for (int step = 0; step < 7; ++step)
             {
                 const PaintPoint g = SamplePaintGradient(gradient, source.width, source.height, point);
                 double dx = -g.y, dy = g.x;
                 double length = sqrt(dx * dx + dy * dy);
+                // Chosen weak-gradient cutoff, in byte-luminance units per pixel.
                 if (length < 0.3)
                 {
                     dx = step ? previous.x : cos(flatAngle) * (arm ? 1 : -1);
@@ -536,10 +548,12 @@ namespace
                 }
                 if (step)
                 {
+                    // Chosen direction smoothing: 65% local tangent, 35% momentum.
                     dx = 0.65 * dx + 0.35 * previous.x;
                     dy = 0.65 * dy + 0.35 * previous.y;
                 }
                 length = sqrt(dx * dx + dy * dy);
+                // Numerical guard before normalizing the direction vector.
                 if (length < 1e-6) break;
                 dx /= length; dy /= length;
                 PaintPoint next(point.x + radius * dx, point.y + radius * dy);
@@ -553,6 +567,8 @@ namespace
                 const double canvasError = PaintColorError(&reference[p * 3], canvasColor);
                 // Always stop at a strong color boundary. After two control
                 // points, stop if the existing painting already fits better.
+                // 85 and 20 are chosen RGB-distance limits, squared to match error.
+                // step >= 2 enables the second check on the third attempted move.
                 if (strokeError > 85.0 * 85.0 ||
                     (step >= 2 && strokeError > Max(20.0 * 20.0, canvasError))) break;
                 arms[arm].push_back(next);
@@ -564,6 +580,8 @@ namespace
         stroke.points.push_back(PaintPoint(x, y));
         stroke.points.insert(stroke.points.end(), arms[1].begin(), arms[1].end());
         const double luminance = Luminance(stroke.color);
+        // Chosen color variation: shared +/-5, 4% more distance from gray,
+        // and independent +/-1.5 per channel. Values are clamped to byte range.
         const double valueJitter = (random(randomEngine) - 0.5) * 10.0;
         for (int c = 0; c < 3; ++c)
             stroke.color[c] = Max(0.0, Min(255.0, luminance +
@@ -578,6 +596,8 @@ namespace
         vector<PaintPoint> padded(2, points.front()), result;
         padded.insert(padded.end(), points.begin(), points.end());
         padded.push_back(points.back()); padded.push_back(points.back());
+        // Four samples per span are a quality/cost choice. The four control
+        // points and polynomial coefficients belong to the cubic B-spline formula.
         for (size_t i = 0; i + 3 < padded.size(); ++i)
             for (int sample = 0; sample < 4; ++sample)
             {
@@ -603,6 +623,7 @@ namespace
             minX = Min(minX, path[i].x); minY = Min(minY, path[i].y);
             maxX = Max(maxX, path[i].x); maxY = Max(maxY, path[i].y);
         }
+        // One extra pixel includes the soft edge before clipping to image bounds.
         const int left = Max(0, static_cast<int>(floor(minX - stroke.radius - 1)));
         const int top = Max(0, static_cast<int>(floor(minY - stroke.radius - 1)));
         const int right = Min(w - 1, static_cast<int>(ceil(maxX + stroke.radius + 1)));
@@ -615,6 +636,8 @@ namespace
             const PaintPoint a = path[i - 1], b = path[i];
             const double vx = b.x - a.x, vy = b.y - a.y;
             const double length2 = vx * vx + vy * vy, length = sqrt(length2);
+            // Use each sampled segment's midpoint index for taper progress.
+            // Chosen taper approaches 65% near the tips and 100% near the middle.
             const double progress = (i - 0.5) / (path.size() - 1);
             const double radius = stroke.radius * (0.65 + 0.35 * sin(c_pi * progress));
             const int x0 = Max(left, static_cast<int>(floor(Min(a.x, b.x) - radius - 1)));
@@ -624,13 +647,17 @@ namespace
             for (int y = y0; y <= y1; ++y)
                 for (int x = x0; x <= x1; ++x)
                 {
+                    // Degenerate-segment guards: (1e-4 pixels)^2 = 1e-8.
                     const double t = length2 > 1e-8
                         ? Max(0.0, Min(1.0, ((x - a.x) * vx + (y - a.y) * vy) / length2)) : 0.0;
                     const double dx = x - a.x - t * vx, dy = y - a.y - t * vy;
+                    // Approximate a one-pixel transition centered on the brush edge.
                     const double edge = Max(0.0, Min(1.0, radius + 0.5 - sqrt(dx * dx + dy * dy)));
                     if (edge <= 0.0) continue;
                     const double cross = length > 1e-4 ? (-vy * dx + vx * dy) / length : dx;
                     // Longitudinal bristle tracks and a soft, tapered footprint.
+                    // Chosen frequency 2.2 rad/pixel gives a roughly 2.86-pixel period;
+                    // 0.90 +/- 0.10 modulates coverage between 80% and 100%.
                     const double bristle = sin(cross * 2.2 + stroke.phase);
                     const float amount = static_cast<float>(edge * stroke.opacity * (0.90 + 0.10 * bristle));
                     const size_t tile = static_cast<size_t>(y - top) * tileWidth + x - left;
@@ -639,6 +666,7 @@ namespace
                     if (amount > coverage[tile])
                     {
                         coverage[tile] = amount;
+                        // Chosen bristle color modulation: +/-3.5% before clipping.
                         pigment[tile] = static_cast<float>(1.0 + 0.035 * bristle);
                     }
                 }
@@ -657,21 +685,27 @@ namespace
 
     double SmoothPaintStep(double low, double high, double value)
     {
+        // Cubic with values 0/1 and zero slope at both ends; all callers use high > low.
+        // Derivation of coefficients 3 and 2: docs/adr/0003-cartoon-npr-parameters.md
         const double t = Max(0.0, Min(1.0, (value - low) / (high - low)));
         return t * t * (3.0 - 2.0 * t);
     }
 
     double PaintNoise(int x, int y, unsigned int seed)
     {
+        // Fixed integer-mixing defaults; exact provenance/statistics are unverified.
+        // docs/adr/0004-watercolor-npr-parameters.md distinguishes these from style gains.
         unsigned int hash = static_cast<unsigned int>(x) * 374761393u +
             static_cast<unsigned int>(y) * 668265263u + seed;
         hash = (hash ^ (hash >> 13)) * 1274126177u;
         hash ^= hash >> 16;
+        // Map the low 16 bits to [0,1]; 65535 is the bit range, not grain intensity.
         return (hash & 65535u) / 65535.0;
     }
 
     double PaintValueNoise(double x, double y, unsigned int seed)
     {
+        // Four lattice values, interpolated with cubic-smoothed fractions on each axis.
         const int ix = static_cast<int>(floor(x)), iy = static_cast<int>(floor(y));
         const double tx = SmoothPaintStep(0.0, 1.0, x - ix);
         const double ty = SmoothPaintStep(0.0, 1.0, y - iy);
@@ -681,6 +715,7 @@ namespace
 
     vector<float> BilateralPaint(const TargaImage& source, int radius, int passes)
     {
+        // Formula versus chosen parameters: docs/adr/0003-cartoon-npr-parameters.md
         const size_t count = PixelCount(source);
         vector<float> work(count * 3), next(count * 3);
         for (size_t p = 0; p < count; ++p)
@@ -689,12 +724,15 @@ namespace
                     ? Min(255.0f, source.data[p * 4 + c] * 255.0f / source.data[p * 4 + 3]) : 0.0f;
         const int size = radius * 2 + 1;
         vector<double> spatial(size * size);
+        // Gaussian's factor 2 is structural; sigma = radius is our scale choice.
         for (int y = -radius; y <= radius; ++y)
             for (int x = -radius; x <= radius; ++x)
                 spatial[(y + radius) * size + x + radius] =
                     exp(-(x * x + y * y) / (2.0 * radius * radius));
         // Look up the range weight instead of evaluating an exponential at
         // every neighbor of every pixel. RGB distance never exceeds 3*255^2.
+        // Chosen color scale: RMS channel difference of 40 gives exp(-0.5).
+        // Dividing the summed squared distance by 3 uses a per-channel scale.
         vector<float> range(3 * 255 * 255 + 1);
         for (size_t i = 0; i < range.size(); ++i)
             range[i] = static_cast<float>(exp(-static_cast<double>(i) / (2.0 * 40.0 * 40.0 * 3.0)));
@@ -721,6 +759,7 @@ namespace
                                 const double delta = work[p * 3 + c] - work[q * 3 + c];
                                 distance += delta * delta;
                             }
+                            // Integer bins approximate the continuous squared-distance weight.
                             const int bin = Min(static_cast<int>(range.size()) - 1, static_cast<int>(distance));
                             const double weight = spatial[(j + radius) * size + i + radius] *
                                 range[bin] * source.data[q * 4 + 3];
@@ -742,6 +781,7 @@ namespace
         const double maximum = Max(r, Max(g, b)), minimum = Min(r, Min(g, b));
         const double delta = maximum - minimum;
         double hue = 0.0;
+        // Epsilon guards gray/black divisions; hue uses HSV's six-sector formula.
         if (delta > 1e-6)
         {
             if (maximum == r) hue = (g - b) / delta;
@@ -749,10 +789,14 @@ namespace
             else hue = 4.0 + (r - g) / delta;
             if (hue < 0) hue += 6.0;
         }
+        // Chosen 36 hue bins: 10 degrees each. +0.5 selects the nearest bin.
         const double hueBins = 36.0;
         hue = fmod(floor(hue * hueBins / 6.0 + 0.5) * 6.0 / hueBins, 6.0);
         double saturation = maximum > 1e-6 ? delta / maximum : 0.0;
+        // Chosen 12% saturation boost, then 1/8 spacing (nine values including 0 and 1).
         saturation = Min(1.0, floor(saturation * 1.12 * 8.0 + 0.5) / 8.0);
+        // Chosen six value levels at strength 1; inverse-root scaling is limited to 3..8.
+        // N levels including both endpoints require N-1 intervals.
         const int bands = Max(3, Min(8, static_cast<int>(6.0 / sqrt(strength) + 0.5)));
         const double value = floor(maximum * (bands - 1) + 0.5) / (bands - 1);
         const double chroma = value * saturation;
@@ -764,22 +808,29 @@ namespace
         else if (hue < 4) { color[1] = second; color[2] = chroma; }
         else if (hue < 5) { color[0] = second; color[2] = chroma; }
         else { color[0] = chroma; color[2] = second; }
+        // Chosen cool shadow tint: full below value 0.05, fading out by 0.6.
+        // These byte-channel offsets also lift pure black slightly.
         const double shadow = 1.0 - SmoothPaintStep(0.05, 0.6, value);
         const double tint[3] = { 3.0, 5.0, 11.0 };
         for (int c = 0; c < 3; ++c)
             result[c] = Max(0.0, Min(255.0, (color[c] + value - chroma) * 255.0 + tint[c] * shadow));
     }
 
+    // Chosen warm paper RGB; watercolor parameter provenance is documented in
+    // docs/adr/0004-watercolor-npr-parameters.md.
     const double waterPaper[3] = { 244.0, 237.0, 219.0 };
 
     void WaterPigment(const double* rgb, double* density)
     {
         const double luminance = Luminance(rgb) / 255.0;
+        // Chosen cool offset applies fully below luminance 0.10, vanishing by 0.65.
         const double shadow = 1.0 - SmoothPaintStep(0.10, 0.65, luminance);
         const double cool[3] = { -3.0, 1.0, 6.0 };
         for (int c = 0; c < 3; ++c)
         {
+            // Chosen 14% paper tint before conversion to channel-wise log density.
             const double color = rgb[c] * 0.86 + waterPaper[c] * 0.14 + cool[c] * shadow;
+            // The chosen 0.02 floor avoids log(0) and caps this density at about 3.912.
             density[c] = -log(Max(0.02, Min(1.0, color / waterPaper[c])));
         }
     }
@@ -796,18 +847,22 @@ namespace
             minX = Min(minX, path[i].x); minY = Min(minY, path[i].y);
             maxX = Max(maxX, path[i].x); maxY = Max(maxY, path[i].y);
         }
+        // Current support is at most 1.2 (wet width) * 1.15 (soft edge) = 1.38 radii.
+        // Chosen 1.5-radii margin plus one pixel covers that support before clipping.
         const double margin = stroke.radius * 1.5 + 1;
         const int left = Max(0, static_cast<int>(floor(minX - margin)));
         const int top = Max(0, static_cast<int>(floor(minY - margin)));
         const int right = Min(w - 1, static_cast<int>(ceil(maxX + margin)));
         const int bottom = Min(h - 1, static_cast<int>(ceil(maxY + margin)));
         const int tileWidth = right - left + 1;
+        // Sentinel 2 exceeds the normalized-distance cutoff 1.15; union via minimum.
         vector<float> distance(static_cast<size_t>(tileWidth) * (bottom - top + 1), 2.0f);
         for (size_t i = 1; i < path.size(); ++i)
         {
             const PaintPoint a = path[i - 1], b = path[i];
             const double vx = b.x - a.x, vy = b.y - a.y, length2 = vx * vx + vy * vy;
             const double progress = (i - 0.5) / (path.size() - 1);
+            // Chosen broad-tip taper: approaches 75% near tips, 100% near the middle.
             const double radius = stroke.radius * (0.75 + 0.25 * sin(c_pi * progress));
             const int x0 = Max(left, static_cast<int>(floor(Min(a.x, b.x) - margin)));
             const int x1 = Min(right, static_cast<int>(ceil(Max(a.x, b.x) + margin)));
@@ -820,6 +875,7 @@ namespace
                     const double t = length2 > 1e-8
                         ? Max(0.0, Min(1.0, ((x - a.x) * vx + (y - a.y) * vy) / length2)) : 0.0;
                     const double dx = x - a.x - t * vx, dy = y - a.y - t * vy;
+                    // Chosen wetness multiplier ranges from 0.8 to 1.2; d is dimensionless.
                     const float d = static_cast<float>(sqrt(dx * dx + dy * dy) /
                         (radius * (0.8 + wetness[p] * 0.4)));
                     const size_t q = static_cast<size_t>(y - top) * tileWidth + x - left;
@@ -827,6 +883,7 @@ namespace
                 }
         }
         double pigment[3];
+        // Stroke color is already paper-tinted; convert directly without tinting again.
         for (int c = 0; c < 3; ++c)
             pigment[c] = -log(Max(0.02, Min(1.0, stroke.color[c] / waterPaper[c])));
         for (int y = top; y <= bottom; ++y)
@@ -836,10 +893,14 @@ namespace
                 const double d = distance[q];
                 if (d >= 1.15) continue;
                 const size_t p = static_cast<size_t>(y) * w + x;
+                // Chosen soft edge fades between normalized distances 0.55 and 1.15.
                 const double coverage = 1.0 - SmoothPaintStep(0.55, 1.15, d);
+                // Chosen rim center 0.84; 0.018 = 2*sigma^2 gives sigma about 0.0949.
                 const double rim = exp(-((d - 0.84) * (d - 0.84)) / 0.018);
+                // Chosen grain coverage spans 0.78..1; target density gain spans 0.88..1.38.
                 const double amount = coverage * stroke.opacity * (0.78 + 0.22 * granulation[p]);
                 const double deposit = 0.88 + 0.20 * granulation[p] + 0.30 * rim;
+                // Interpolate densities toward a modulated target; amount is not RGB alpha.
                 for (int c = 0; c < 3; ++c)
                     density[p * 3 + c] = static_cast<float>(density[p * 3 + c] * (1 - amount) +
                         pigment[c] * deposit * amount);
@@ -1615,13 +1676,22 @@ bool TargaImage::NPR_Paint()
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::NPR_Paint_Advanced(float brushScale, unsigned int seed)
 {
+    // Style defaults and numerical/formula constants are explained in
+    // docs/adr/0002-advanced-npr-parameter-provenance.md. Exact style values
+    // have no recorded systematic parameter comparison establishing optimality.
+    // The half-to-triple scale range is a chosen interface limit.
     if (!ValidImage(*this) || !std::isfinite(brushScale) ||
         brushScale < 0.5f || brushScale > 3.0f) return false;
 
     const size_t count = PixelCount(*this);
+    // Empirical calibration: wiz.tga's 464-pixel short side uses radius 8.
+    // 464 / 8 = 58. Rationale and limits: docs/adr/0001-advanced-npr-brush-scale.md
     const double baseRadius = Max(2.0, Min(32.0,
         Min(width, height) * static_cast<double>(brushScale) / 58.0));
+    // Three chosen coarse-to-fine layers: halve twice, with small-brush floors.
     const double radii[3] = { baseRadius, Max(1.0, baseRadius * 0.5), Max(0.75, baseRadius * 0.25) };
+    // Chosen RGB-distance thresholds; lower values request more repainting.
+    // The initial zero is a placeholder: layer 0 bypasses the threshold check.
     const double thresholds[3] = { 0.0, 28.0, 20.0 };
     vector<float> canvas(count * 3), difference(count);
     mt19937 randomEngine(seed);
@@ -1635,6 +1705,7 @@ bool TargaImage::NPR_Paint_Advanced(float brushScale, unsigned int seed)
         {
             // A lightly tinted underpainting guarantees complete coverage,
             // including the image border and between semi-transparent strokes.
+            // Chosen warm-white RGB, mixed as 96% reference plus 4% paper.
             const double paper[3] = { 242.0, 238.0, 228.0 };
             for (size_t p = 0; p < count; ++p)
                 for (int c = 0; c < 3; ++c)
@@ -1646,6 +1717,8 @@ bool TargaImage::NPR_Paint_Advanced(float brushScale, unsigned int seed)
             difference[p] = static_cast<float>(sqrt(PaintColorError(&reference[p * 3], color)));
         }
 
+        // Chosen spacing of about one brush radius; +0.5 rounds a positive value.
+        // A minimum of one pixel keeps the grid loops advancing.
         const int grid = Max(1, static_cast<int>(radius + 0.5));
         vector<CurvedStroke> strokes;
         for (int top = 0; top < height; top += grid)
@@ -1653,6 +1726,7 @@ bool TargaImage::NPR_Paint_Advanced(float brushScale, unsigned int seed)
             {
                 const int bottom = Min(height, top + grid), right = Min(width, left + grid);
                 int bestX = left, bestY = top;
+                // The first visible pixel overrides this sentinel even for negative scores.
                 double sumError = 0.0, sumAlpha = 0.0, bestError = -1.0;
                 for (int y = top; y < bottom; ++y)
                     for (int x = left; x < right; ++x)
@@ -1664,6 +1738,7 @@ bool TargaImage::NPR_Paint_Advanced(float brushScale, unsigned int seed)
                         sumError += difference[p] * alpha;
                         // Coarse seeds prefer the cell center; detail layers
                         // concentrate new strokes at the greatest color error.
+                        // right/bottom are exclusive, so subtract one before averaging ends.
                         const double error = layer == 0
                             ? -fabs(x - (left + right - 1) * 0.5) - fabs(y - (top + bottom - 1) * 0.5)
                             : difference[p] * alpha;
@@ -1687,12 +1762,16 @@ bool TargaImage::NPR_Paint_Advanced(float brushScale, unsigned int seed)
         for (int x = 0; x < width; ++x)
         {
             const size_t p = static_cast<size_t>(y) * width + x;
+            // Fixed integer-mixing choices; their exact provenance and statistical
+            // quality are unverified (see ADR-0002). Keep them stable for repeatability.
             unsigned int hash = static_cast<unsigned int>(x) * 374761393u +
                 static_cast<unsigned int>(y) * 668265263u + seed;
             hash = (hash ^ (hash >> 13)) * 1274126177u;
             hash ^= hash >> 16;
+            // Low eight bits become [0,1]; chosen width 0.018 gives +/-0.9% grain.
             const double grain = 1.0 + (static_cast<double>(hash & 255u) / 255.0 - 0.5) * 0.018;
             const double alpha = data[p * 4 + 3] / 255.0;
+            // Restore premultiplied RGB; +0.5 rounds to byte, original alpha stays intact.
             for (int c = 0; c < 3; ++c)
                 data[p * 4 + c] = ClampByte(Min(255.0, canvas[p * 3 + c] * grain) * alpha + 0.5);
         }
@@ -1708,8 +1787,11 @@ bool TargaImage::NPR_Paint_Advanced(float brushScale, unsigned int seed)
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::NPR_Cartoon(float strength)
 {
+    // Chosen defaults and formula derivations: docs/adr/0003-cartoon-npr-parameters.md
+    // Exact style values have no recorded systematic comparison establishing optimality.
     if (!ValidImage(*this) || !std::isfinite(strength) || strength < 0.5f || strength > 3.0f)
         return false;
+    // Chosen 2..5-pixel radius, rounded down, and three smoothing passes.
     const int radius = Max(2, Min(5, static_cast<int>(2.0 + strength)));
     const vector<float> smooth = BilateralPaint(*this, radius, 3);
     vector<PaintPoint> gradient = PaintGradient(smooth, width, height);
@@ -1724,6 +1806,8 @@ bool TargaImage::NPR_Cartoon(float strength)
             // gradients so such material boundaries still receive an outline.
             for (int c = 0; c < 3; ++c)
             {
+                // Chosen scale: 0.275 times the two-sided difference equals 55% of
+                // the usual central difference. Recheck ink thresholds if this changes.
                 const double gx = 0.275 * (smooth[(static_cast<size_t>(y) * width + Reflect(x + 1, width)) * 3 + c] -
                     smooth[(static_cast<size_t>(y) * width + Reflect(x - 1, width)) * 3 + c]);
                 const double gy = 0.275 * (smooth[(static_cast<size_t>(Reflect(y + 1, height)) * width + x) * 3 + c] -
@@ -1738,12 +1822,14 @@ bool TargaImage::NPR_Cartoon(float strength)
         {
             const size_t p = static_cast<size_t>(y) * width + x;
             const double length = magnitude[p];
+            // Guard near-zero normalization; rounded direction samples neighboring pixels.
             if (length < 1e-5) continue;
             const int dx = static_cast<int>(round(gradient[p].x / length));
             const int dy = static_cast<int>(round(gradient[p].y / length));
             const size_t a = static_cast<size_t>(Reflect(y + dy, height)) * width + Reflect(x + dx, width);
             const size_t b = static_cast<size_t>(Reflect(y - dy, height)) * width + Reflect(x - dx, width);
             // Nonmaximum suppression makes a thin centerline before widening.
+            // Chosen ink transition 6..22 at strength 1; stronger settings lower both limits.
             if (length >= magnitude[a] && length >= magnitude[b])
                 ink[p] = static_cast<float>(SmoothPaintStep(6.0 / sqrt(strength), 22.0 / sqrt(strength), length));
         }
@@ -1756,11 +1842,14 @@ bool TargaImage::NPR_Cartoon(float strength)
                 for (int i = -1; i <= 1; ++i)
                 {
                     const size_t q = static_cast<size_t>(Reflect(y + j, height)) * width + Reflect(x + i, width);
+                    // Chosen diagonal/axis gains, capped at 1.3x strength scaling.
+                    // Max combines candidates; these weights need not sum to one.
                     const double weight = (i && j ? 0.35 : 0.65) * Min(1.3, sqrt(static_cast<double>(strength)));
                     edge = Max(edge, ink[q] * weight);
                 }
             double color[3];
             CelPaintColor(&smooth[p * 3], strength, color);
+            // Chosen blue-black RGB for the outlines.
             const double inkColor[3] = { 9.0, 10.0, 18.0 };
             const double alpha = data[p * 4 + 3] / 255.0;
             for (int c = 0; c < 3; ++c)
@@ -1778,12 +1867,17 @@ bool TargaImage::NPR_Cartoon(float strength)
 ///////////////////////////////////////////////////////////////////////////////
 bool TargaImage::NPR_Watercolor(float brushScale, unsigned int seed)
 {
+    // Parameter roles, units and limitations: docs/adr/0004-watercolor-npr-parameters.md
+    // Exact style values are defaults without a recorded systematic comparison.
     if (!ValidImage(*this) || !std::isfinite(brushScale) ||
         brushScale < 0.5f || brushScale > 3.0f) return false;
     const size_t count = PixelCount(*this);
+    // Chosen short-side scale 1/60, clamped to 2..24 pixels; no calibration record for 60.
     const double base = Max(2.0, Min(24.0,
         Min(width, height) * static_cast<double>(brushScale) / 60.0));
+    // Three chosen wash scales; the broadest radius is 2*base (up to 48 pixels).
     const double radii[3] = { base * 2.0, base, Max(0.8, base * 0.35) };
+    // Chosen RGB-distance thresholds. Layer 0 bypasses its placeholder zero.
     const double thresholds[3] = { 0.0, 18.0, 12.0 };
     vector<float> wetness(count), granulation(count), accents(count);
     vector<float> density(count * 3), canvas(count * 3), difference(count);
@@ -1791,8 +1885,11 @@ bool TargaImage::NPR_Watercolor(float brushScale, unsigned int seed)
         for (int x = 0; x < width; ++x)
         {
             const size_t p = static_cast<size_t>(y) * width + x;
+            // Chosen coarse/fine wetness mix; divisors set lattice spacing in pixels.
+            // Fixed XOR salts vary the maps; statistical independence is unverified.
             wetness[p] = static_cast<float>(0.65 * PaintValueNoise(x / (base * 2.3), y / (base * 2.3), seed) +
                 0.35 * PaintValueNoise(x / (base * 0.65), y / (base * 0.65), seed ^ 0x9e3779b9u));
+            // Chosen 60% pixel noise plus 40% smooth noise on a 2.8-pixel lattice.
             granulation[p] = static_cast<float>(0.6 * PaintNoise(x, y, seed ^ 0x85ebca6bu) +
                 0.4 * PaintValueNoise(x / 2.8, y / 2.8, seed ^ 0xc2b2ae35u));
         }
@@ -1807,6 +1904,7 @@ bool TargaImage::NPR_Watercolor(float brushScale, unsigned int seed)
             for (int c = 0; c < 3; ++c)
             {
                 reference[p * 3 + c] = static_cast<float>(waterPaper[c] * exp(-pigment[c]));
+                // Chosen 85% density underpainting; this is not an RGB opacity.
                 if (layer == 0) density[p * 3 + c] = static_cast<float>(pigment[c] * 0.85);
                 canvas[p * 3 + c] = static_cast<float>(waterPaper[c] * exp(-density[p * 3 + c]));
             }
@@ -1814,10 +1912,12 @@ bool TargaImage::NPR_Watercolor(float brushScale, unsigned int seed)
             difference[p] = static_cast<float>(sqrt(PaintColorError(&reference[p * 3], current)));
         }
         const vector<PaintPoint> gradient = PaintGradient(reference, width, height);
+        // Chosen gradient transition 4..18 on the finest (third) reference layer.
         if (layer == 2)
             for (size_t p = 0; p < count; ++p)
                 accents[p] = static_cast<float>(SmoothPaintStep(4.0, 18.0,
                     sqrt(gradient[p].x * gradient[p].x + gradient[p].y * gradient[p].y)));
+        // Chosen wash spacing: 1.25 radii, nearest integer, at least two pixels.
         const int grid = Max(2, static_cast<int>(radii[layer] * 1.25 + 0.5));
         vector<CurvedStroke> strokes;
         for (int top = 0; top < height; top += grid)
@@ -1842,6 +1942,7 @@ bool TargaImage::NPR_Watercolor(float brushScale, unsigned int seed)
                 {
                     CurvedStroke stroke = TracePaintStroke(bestX, bestY, radii[layer],
                         reference, canvas, gradient, *this, randomEngine);
+                    // Chosen density-blend weights replace the shared tracer's opacity.
                     stroke.opacity = layer == 0 ? 0.50 : 0.42;
                     strokes.push_back(stroke);
                 }
@@ -1852,10 +1953,12 @@ bool TargaImage::NPR_Watercolor(float brushScale, unsigned int seed)
     }
     for (size_t p = 0; p < count; ++p)
     {
+        // Chosen final density gain spans 0.85..1.15; paper brightness spans 0.985..1.015.
         const double deposit = 0.93 + 0.14 * granulation[p] + 0.16 * (wetness[p] - 0.5);
         const double paperGrain = 0.985 + 0.03 * granulation[p];
         for (int c = 0; c < 3; ++c)
         {
+            // Chosen contour gain adds up to 0.10 density, modulated by wetness.
             const double pigment = density[p * 3 + c] * deposit +
                 0.10 * accents[p] * (0.4 + wetness[p] * 0.6);
             canvas[p * 3 + c] = static_cast<float>(Min(255.0, waterPaper[c] * paperGrain * exp(-pigment)));
@@ -1864,6 +1967,7 @@ bool TargaImage::NPR_Watercolor(float brushScale, unsigned int seed)
 
     // Selective dry-brush accents recover features after the broad wet washes.
     // Only high-error, directional areas receive these thin broken strokes.
+    // Chosen fine reference radius; PaintReference converts this radius to Gaussian sigma.
     vector<float> detail = PaintReference(*this, Max(0.8, base * 0.22));
     for (size_t p = 0; p < count; ++p)
     {
@@ -1873,17 +1977,20 @@ bool TargaImage::NPR_Watercolor(float brushScale, unsigned int seed)
             detail[p * 3 + c] = static_cast<float>(waterPaper[c] * exp(-pigment[c]));
     }
     const vector<PaintPoint> detailGradient = PaintGradient(detail, width, height);
+    // Chosen dry-brush spacing: floor(0.85*base), at least three pixels.
     const int detailGrid = Max(3, static_cast<int>(base * 0.85));
     vector<CurvedStroke> dryStrokes;
     for (int top = 0; top < height; top += detailGrid)
         for (int left = 0; left < width; left += detailGrid)
         {
+            // Chosen minimum RGB distance 16, squared to match PaintColorError.
             double bestError = 16.0 * 16.0;
             int bestX = -1, bestY = -1;
             for (int y = top; y < Min(height, top + detailGrid); ++y)
                 for (int x = left; x < Min(width, left + detailGrid); ++x)
                 {
                     const size_t p = static_cast<size_t>(y) * width + x;
+                    // Chosen directional cutoff uses L1 gradient size, unlike wash accents.
                     if (!data[p * 4 + 3] ||
                         fabs(detailGradient[p].x) + fabs(detailGradient[p].y) < 2.0) continue;
                     double color[3] = { canvas[p * 3], canvas[p * 3 + 1], canvas[p * 3 + 2] };
@@ -1892,6 +1999,7 @@ bool TargaImage::NPR_Watercolor(float brushScale, unsigned int seed)
                 }
             if (bestX >= 0)
             {
+                // Chosen fine radius and 38% base opacity; DrawPaintStroke blends in RGB.
                 CurvedStroke stroke = TracePaintStroke(bestX, bestY, Max(0.75, base * 0.23),
                     detail, canvas, detailGradient, *this, randomEngine);
                 stroke.opacity = 0.38;
